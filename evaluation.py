@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -21,7 +23,7 @@ from sklearn.metrics import (
 
 
 def expected_cost_from_cm(cm: np.ndarray, cost_fp: int, cost_fn: int) -> int:
-    """Compute expected cost from confusion matrix."""
+    """Compute the expected cost from confusion matrix."""
     tn, fp, fn, tp = cm.ravel()
     return int(fp * cost_fp + fn * cost_fn)
 
