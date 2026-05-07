@@ -40,7 +40,7 @@ BALANCING_STRATEGIES = [
     "adasyn",
 ]
 
-# MODEL_NAMES = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboost"]
-MODEL_NAMES = ["extra_trees"]
+MODEL_NAMES = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboost"]
+# MODEL_NAMES = ["extra_trees"]
 HYPERPARAMETER_MODELS = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboost"]
 HYPERPARAMETER_STRATEGIES = ["class_weight", "smote"]
