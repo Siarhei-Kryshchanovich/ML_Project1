@@ -1,6 +1,7 @@
 """Run Report 2 fraud detection experiments."""
 from __future__ import annotations
 
+import argparse
 import warnings
 from pathlib import Path
 
@@ -8,7 +9,13 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.metrics import make_scorer, f1_score, precision_score, recall_score
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.model_selection import (
+    ParameterGrid,
+    RandomizedSearchCV,
+    StratifiedKFold,
+    cross_validate,
+    train_test_split,
+)
 
 from config import (
     BALANCING_STRATEGIES,
@@ -16,16 +23,20 @@ from config import (
     COST_FP,
     CV_FOLDS,
     DATASETS,
+    HYPERPARAMETER_MODELS,
+    HYPERPARAMETER_N_ITER,
+    HYPERPARAMETER_STRATEGIES,
     MODEL_NAMES,
     OUTPUT_DIR,
     PLOTS_DIR,
     RANDOM_STATE,
+    RUN_HYPERPARAMETER_ANALYSIS,
     TEST_SIZE,
     VAL_SIZE,
 )
 from data_loader import load_dataset
 from evaluation import compute_metrics, save_confusion_matrix, save_curves, tune_threshold
-from models import XGB_AVAILABLE, build_pipeline, get_base_models
+from models import XGB_AVAILABLE, build_pipeline, get_base_models, get_hyperparameter_grid
 from preprocessing import build_preprocessor
 from utils import ensure_dir, experiment_name
 
@@ -42,7 +53,88 @@ def _build_cv_scores():
     }
 
 
-def run_all_experiments(include_is_flagged_fraud: bool = False):
+def _parse_args():
+    parser = argparse.ArgumentParser(description="Run Report 2 fraud detection experiments.")
+    parser.add_argument(
+        "--dataset",
+        choices=sorted(DATASETS.keys()),
+        nargs="+",
+        default=None,
+        help="Dataset(s) to run. Omit to run all configured datasets.",
+    )
+    parser.add_argument(
+        "--include-is-flagged-fraud",
+        action="store_true",
+        help="Include PaySim isFlaggedFraud feature. Default excludes it to reduce leakage risk.",
+    )
+    return parser.parse_args()
+
+
+def _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_models, model_names):
+    """Run compact CV-based hyperparameter analysis and return one row per candidate."""
+    rows = []
+    cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
+
+    for model_name in HYPERPARAMETER_MODELS:
+        if model_name not in model_names:
+            continue
+
+        param_grid = get_hyperparameter_grid(model_name)
+        if not param_grid:
+            continue
+
+        n_iter = min(HYPERPARAMETER_N_ITER, len(list(ParameterGrid(param_grid))))
+
+        for strategy in HYPERPARAMETER_STRATEGIES:
+            exp_name = experiment_name(dataset_name, model_name, strategy)
+            print(f"  -> hyperparameters: {exp_name}")
+
+            preprocessor = build_preprocessor(dataset_name, X_train_temp)
+            pipeline = build_pipeline(
+                dataset_name=dataset_name,
+                preprocessor=preprocessor,
+                model=clone(base_models[model_name]),
+                model_name=model_name,
+                strategy=strategy,
+                y_train=y_train_temp,
+            )
+            search = RandomizedSearchCV(
+                estimator=pipeline,
+                param_distributions=param_grid,
+                n_iter=n_iter,
+                scoring=_build_cv_scores(),
+                refit="pr_auc",
+                cv=cv,
+                random_state=RANDOM_STATE,
+                n_jobs=-1,
+                return_train_score=False,
+                error_score=np.nan,
+            )
+            search.fit(X_train_temp, y_train_temp)
+
+            cv_results = pd.DataFrame(search.cv_results_)
+            for _, result in cv_results.iterrows():
+                rows.append(
+                    {
+                        "dataset": dataset_name,
+                        "model": model_name,
+                        "strategy": strategy,
+                        "rank_pr_auc": int(result["rank_test_pr_auc"]),
+                        "mean_cv_pr_auc": result["mean_test_pr_auc"],
+                        "std_cv_pr_auc": result["std_test_pr_auc"],
+                        "mean_cv_roc_auc": result["mean_test_roc_auc"],
+                        "std_cv_roc_auc": result["std_test_roc_auc"],
+                        "mean_cv_recall": result["mean_test_recall"],
+                        "std_cv_recall": result["std_test_recall"],
+                        "mean_fit_time": result["mean_fit_time"],
+                        "params": result["params"],
+                    }
+                )
+
+    return rows
+
+
+def run_all_experiments(include_is_flagged_fraud: bool = False, dataset_names: list[str] | None = None):
     ensure_dir(OUTPUT_DIR)
     ensure_dir(PLOTS_DIR)
 
@@ -53,10 +145,17 @@ def run_all_experiments(include_is_flagged_fraud: bool = False):
     model_names = [m for m in MODEL_NAMES if m in base_models]
 
     results_rows = []
+    hyperparameter_rows = []
 
-    for dataset_name in DATASETS:
+    selected_datasets = list(DATASETS) if dataset_names is None else dataset_names
+
+    for dataset_name in selected_datasets:
         print(f"\n[INFO] Running dataset: {dataset_name}")
-        X, y = load_dataset(dataset_name, include_is_flagged_fraud=include_is_flagged_fraud)
+        try:
+            X, y = load_dataset(dataset_name, include_is_flagged_fraud=include_is_flagged_fraud)
+        except FileNotFoundError as exc:
+            print(f"[WARN] Skipping dataset '{dataset_name}': {exc}")
+            continue
 
         X_train_temp, X_test, y_train_temp, y_test = train_test_split(
             X,
@@ -159,6 +258,14 @@ def run_all_experiments(include_is_flagged_fraud: bool = False):
                 }
                 results_rows.append(result_row)
 
+        if RUN_HYPERPARAMETER_ANALYSIS:
+            hyperparameter_rows.extend(
+                _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_models, model_names)
+            )
+
+    if not results_rows:
+        raise RuntimeError("No experiments were run because no configured dataset files were found.")
+
     results_df = pd.DataFrame(results_rows).sort_values(
         by=["dataset", "test_expected_cost", "test_pr_auc"], ascending=[True, True, False]
     )
@@ -166,7 +273,18 @@ def run_all_experiments(include_is_flagged_fraud: bool = False):
     results_df.to_csv(results_path, index=False)
     print(f"\n[INFO] Saved comparison table: {results_path}")
 
+    if hyperparameter_rows:
+        hyperparameter_df = pd.DataFrame(hyperparameter_rows).sort_values(
+            by=["dataset", "model", "strategy", "rank_pr_auc"]
+        )
+        hyperparameter_path = OUTPUT_DIR / "hyperparameter_analysis.csv"
+        hyperparameter_df.to_csv(hyperparameter_path, index=False)
+        print(f"[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
+
 
 if __name__ == "__main__":
-    # keep default False for methodological safety in PaySim
-    run_all_experiments(include_is_flagged_fraud=False)
+    args = _parse_args()
+    run_all_experiments(
+        include_is_flagged_fraud=args.include_is_flagged_fraud,
+        dataset_names=args.dataset,
+    )

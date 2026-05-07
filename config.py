@@ -6,6 +6,8 @@ TEST_SIZE = 0.20
 VAL_SIZE = 0.25  # 25% of remaining train_temp -> 20% of full data
 N_JOBS = -1
 CV_FOLDS = 3
+RUN_HYPERPARAMETER_ANALYSIS = True
+HYPERPARAMETER_N_ITER = 6
 
 # Costs used for cost-sensitive evaluation
 COST_FP = 10
@@ -38,4 +40,7 @@ BALANCING_STRATEGIES = [
     "adasyn",
 ]
 
-MODEL_NAMES = ["logreg", "decision_tree", "random_forest", "xgboost"]
+# MODEL_NAMES = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboost"]
+MODEL_NAMES = ["extra_trees"]
+HYPERPARAMETER_MODELS = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboost"]
+HYPERPARAMETER_STRATEGIES = ["class_weight", "smote"]
