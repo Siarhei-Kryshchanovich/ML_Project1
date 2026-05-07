@@ -25,6 +25,7 @@ python main.py
    - Logistic Regression
    - Decision Tree
    - Random Forest
+   - Extra Trees
    - XGBoost (only if import succeeds in `models.py`)
 
 5. **Optional XGBoost behavior is checked.**  
@@ -159,6 +160,12 @@ python main.py
     After all loops, `results_rows` -> DataFrame, sorted by dataset + expected cost + PR-AUC, then saved to:
     `outputs/comparison_table.csv`
 
+31. **Hyperparameter analysis is run and saved.**  
+    If `RUN_HYPERPARAMETER_ANALYSIS=True`, `main.py` runs compact randomized
+    CV searches for the configured models and selected balancing strategies.
+    The analysis ranks parameter candidates by PR-AUC and saves:
+    `outputs/hyperparameter_analysis.csv`
+
 ## 3. Supporting file roles
 - **`main.py`**: central orchestration; runs loops, splits data, trains/evaluates, saves outputs.
 - **`config.py`**: all experiment constants (paths, datasets, costs, models, strategies, split ratios, CV folds).
@@ -207,9 +214,17 @@ Generated artifacts are saved under `outputs/`:
    `outputs/comparison_table.csv`  
    Contains one row per dataset/model/strategy with test and CV summaries.
 
+4. **Hyperparameter analysis table**  
+   `outputs/hyperparameter_analysis.csv`  
+   Contains one row per tested parameter candidate, including model, balancing
+   strategy, candidate parameters, mean/std PR-AUC, mean/std ROC-AUC, recall,
+   ranking, and fit time.
+
 How to use these in Report 2:
 - use `comparison_table.csv` to compare models/strategies across datasets,
 - use per-experiment threshold CSVs to justify threshold choice,
+- use `hyperparameter_analysis.csv` to justify selected model complexity and
+  compare parameter sensitivity,
 - use ROC/PR/CM plots as visual evidence of performance and trade-offs.
 
 ## 6. Practical notes
@@ -218,3 +233,20 @@ How to use these in Report 2:
 - **Class imbalance handling:** strategy is explicitly controlled in loops, so comparisons are consistent.
 - **XGBoost optional behavior:** if import fails, experiments still run for other models and XGBoost is skipped with info message.
 - **Reproducibility:** random seeds come from `RANDOM_STATE` in `config.py` and are passed to splitters/models/samplers.
+
+## 7. Mapping to the 5.0 grading rubric
+- **4+ models:** Logistic Regression, Decision Tree, Random Forest, Extra Trees,
+  plus XGBoost when installed.
+- **At least 2 ensembles:** Random Forest and Extra Trees are always available;
+  XGBoost is an additional ensemble.
+- **3+ balancing methods:** class weighting, random undersampling, random
+  oversampling, SMOTE, and ADASYN.
+- **Cost-sensitive evaluation:** expected cost uses separate false-positive and
+  false-negative costs.
+- **Experiment automation:** loops over datasets, models, strategies, threshold
+  scans, plots, comparison tables, CV summaries, and hyperparameter searches.
+- **Hyperparameter analysis:** implemented by `RandomizedSearchCV` and exported
+  to `outputs/hyperparameter_analysis.csv`.
+- **Critical analysis evidence:** the final written report should cite the best
+  rows from `comparison_table.csv`, compare PR-AUC/recall/expected cost, and
+  discuss whether CV standard deviations indicate stable results.
