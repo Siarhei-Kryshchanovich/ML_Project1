@@ -28,16 +28,10 @@ python main.py
    - Extra Trees
    - XGBoost (only if import succeeds in `models.py`)
 
-5. **Optional XGBoost behavior is checked.**  
-   If xgboost is not installed, `xgboost` is not present in `base_models`, and `main.py` prints an info message and skips it.
-
-6. **Model list is filtered.**  
-   `MODEL_NAMES` from `config.py` is filtered to names that really exist in `base_models`.
-
-7. **Loop over datasets starts.**  
+5. **Loop over datasets starts.**  
    `for dataset_name in DATASETS:` iterates through the configured datasets (`creditcard`, `paysim`) from `config.py`.
 
-8. **Each dataset is loaded via `load_dataset`.**  
+6. **Each dataset is loaded via `load_dataset`.**  
    `load_dataset(dataset_name, include_is_flagged_fraud=False)` does:
    - reads CSV from `DATASETS[dataset_name]["path"]`
    - selects target column from `DATASETS[dataset_name]["target"]`
@@ -46,28 +40,28 @@ python main.py
    - for PaySim, additionally drops `isFlaggedFraud` by default
    - returns `X` (features) and `y` (target)
 
-9. **Target columns are selected.**  
+7. **Target columns are selected.**  
    - Credit card target: `Class`
    - PaySim target: `isFraud`
 
-10. **Unnecessary columns are dropped.**  
-    - Credit card: only target removed (no extra drop columns in config)
-    - PaySim: `nameOrig`, `nameDest`, target (`isFraud`), and usually `isFlaggedFraud`
+8. **Unnecessary columns are dropped.**  
+   - Credit card: only target removed (no extra drop columns in config)
+   - PaySim: `nameOrig`, `nameDest`, target (`isFraud`), and usually `isFlaggedFraud`
 
-11. **Data split: train/validation/test.**  
-    Two-step split in `main.py` with stratification:
-    - Step A: `train_test_split(..., test_size=TEST_SIZE)` creates `train_temp` and `test`
-    - Step B: `train_test_split(..., test_size=VAL_SIZE)` on `train_temp` creates `train` and `val`
+9. **Data split: train/validation/test.**  
+   Two-step split in `main.py` with stratification:
+   - Step A: `train_test_split(..., test_size=TEST_SIZE)` creates `train_temp` and `test`
+   - Step B: `train_test_split(..., test_size=VAL_SIZE)` on `train_temp` creates `train` and `val`
 
-    With current config (`TEST_SIZE=0.20`, `VAL_SIZE=0.25` of remaining), this is effectively:
-    - ~60% train
-    - ~20% validation
-    - ~20% test
+   With current config (`TEST_SIZE=0.20`, `VAL_SIZE=0.25` of remaining), this is effectively:
+   - ~60% train
+   - ~20% validation
+   - ~20% test
 
-12. **Loop over models starts.**  
+10. **Loop over models starts.**  
     For each available model in filtered `model_names`.
 
-13. **Loop over balancing strategies starts.**  
+11. **Loop over balancing strategies starts.**  
     For each strategy in `BALANCING_STRATEGIES`:
     - `baseline`
     - `class_weight`
@@ -76,28 +70,28 @@ python main.py
     - `smote`
     - `adasyn`
 
-14. **Experiment name is built.**  
+12. **Experiment name is built.**  
     `experiment_name(dataset_name, model_name, strategy)` creates names like `paysim__random_forest__smote`.
 
-15. **Preprocessing is built (`build_preprocessor`).**  
+13. **Preprocessing is built (`build_preprocessor`).**  
     `build_preprocessor(dataset_name, X_train)`:
     - detects numeric columns via dtype
     - detects categorical columns via dtype
     - creates numeric pipeline: median imputation + standard scaling
 
-16. **Numeric vs categorical handling details.**  
+14. **Numeric vs categorical handling details.**  
     - **Numeric features:** always go through imputer + scaler.
     - **Categorical features:**
       - For PaySim, if `type` exists, it gets a dedicated path (most-frequent imputation + one-hot encoding).
       - Any other categorical columns go through fallback categorical pipeline (also impute + one-hot).
 
-17. **Training pipeline is built (`build_pipeline`).**  
+15. **Training pipeline is built (`build_pipeline`).**  
     `build_pipeline(...)` creates an imbalanced-learn pipeline with ordered steps:
     1) preprocessor  
     2) sampler (only for sampling strategies)  
     3) model
 
-18. **Balancing strategy selection logic.**  
+16. **Balancing strategy selection logic.**  
     - `baseline`: no sampler, original model settings
     - `class_weight`: no sampler; class weighting is applied in `_apply_class_weight`:
       - sklearn models -> `class_weight="balanced"`
@@ -107,32 +101,32 @@ python main.py
     - `smote` -> `SMOTE`
     - `adasyn` -> `ADASYN`
 
-19. **Model training happens.**  
+17. **Model training happens.**  
     `pipeline.fit(X_train, y_train)` runs preprocessing + (optional resampling) + model fitting on training data.
 
-20. **Validation probabilities are computed.**  
+18. **Validation probabilities are computed.**  
     `val_prob = pipeline.predict_proba(X_val)[:, 1]` extracts fraud probability for class `1` on validation set.
 
-21. **Threshold tuning on validation set.**  
+19. **Threshold tuning on validation set.**  
     `tune_threshold(y_val, val_prob, cost_fp, cost_fn)`:
     - scans thresholds from `0.01` to `0.99`
     - computes metrics and confusion matrix-based cost at each threshold
     - picks threshold with minimum expected cost
     - returns best threshold + full threshold table
 
-22. **Threshold table is saved to CSV.**  
+20. **Threshold table is saved to CSV.**  
     Saved as:  
     `outputs/<experiment_name>__thresholds.csv`
 
-23. **Final test probabilities are computed.**  
+21. **Final test probabilities are computed.**  
     `test_prob = pipeline.predict_proba(X_test)[:, 1]` on unseen test set.
 
-24. **Final test evaluation is performed at two thresholds.**  
+22. **Final test evaluation is performed at two thresholds.**  
     `compute_metrics(...)` is called twice:
     - default threshold `0.5`
     - tuned threshold from validation
 
-25. **How metrics are calculated.**  
+23. **How metrics are calculated.**  
     In `evaluation.py`, metrics include:
     - ROC-AUC (`roc_auc_score`)
     - PR-AUC (`average_precision_score`)
@@ -140,31 +134,52 @@ python main.py
     - confusion matrix components (`tn, fp, fn, tp`)
     - expected cost = `fp * COST_FP + fn * COST_FN`
 
-26. **Plots are generated and saved.**  
+24. **Plots are generated and saved.**  
     - `save_curves(...)` saves ROC and PR curve images:
       - `outputs/plots/<experiment_name>_roc.png`
       - `outputs/plots/<experiment_name>_pr.png`
     - `save_confusion_matrix(...)` saves tuned-threshold confusion matrix:
       - `outputs/plots/<experiment_name>__cm_tuned.png`
 
-27. **Cross-validation on train_temp is run.**  
+25. **Cross-validation on train_temp is run.**  
     A fresh preprocessor/pipeline is rebuilt using `X_train_temp, y_train_temp`, then `cross_validate` with `StratifiedKFold(CV_FOLDS)` computes mean/std CV metrics.
 
-28. **One result row is appended.**  
+26. **One result row is appended.**  
     A dictionary with dataset, model, strategy, tuned threshold, test metrics, default-cost metric, and CV summaries is appended to `results_rows`.
 
-29. **Inner loops continue automatically.**  
+27. **Inner loops continue automatically.**  
     Flow repeats for next strategy, then next model, then next dataset.
 
-30. **Final comparison table is built and saved.**  
+28. **Final comparison table is built and saved.**  
     After all loops, `results_rows` -> DataFrame, sorted by dataset + expected cost + PR-AUC, then saved to:
     `outputs/comparison_table.csv`
 
-31. **Hyperparameter analysis is run and saved.**  
+29. **Hyperparameter analysis is run and saved.**  
     If `RUN_HYPERPARAMETER_ANALYSIS=True`, `main.py` runs compact randomized
     CV searches for the configured models and selected balancing strategies.
     The analysis ranks parameter candidates by PR-AUC and saves:
     `outputs/hyperparameter_analysis.csv`
+
+## Dashboard Usage
+
+The dashboard now reads data directly from your local folder.
+
+### How it works
+Open `fraud_dashboard.html` in Chrome or Edge, click **Choose Folder**, and select your `outputs/` directory.  
+The dashboard scans and parses all CSV files on the fly and shows a live progress bar during loading.
+
+### Automatically detected files
+The dashboard reads the following files automatically:
+
+- `comparison_table.csv` — used to discover all datasets, models, and strategies dynamically. This means it also works with future experiments, not only with the current 5×6×2 setup.
+- `hyperparameter_analysis.csv` (including the subfolder variant) — used for cross-validation stability charts.
+- All `dataset__model__strategy__thresholds.csv` files — used for the interactive threshold analysis.
+
+### Additional input option
+You can also drag and drop the folder onto the upload zone.
+
+### Important note
+No data is hardcoded. If you add a new dataset or model in future experiments, the dashboard will detect it automatically.
 
 ## 3. Supporting file roles
 - **`main.py`**: central orchestration; runs loops, splits data, trains/evaluates, saves outputs.

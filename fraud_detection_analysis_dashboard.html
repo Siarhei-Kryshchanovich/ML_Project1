@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fraud Detection · Experiment Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c0e14;--bg2:#13161f;--bg3:#1a1e2b;
+  --border:#252a3a;--border2:#2f364d;
+  --text:#e8eaf2;--text2:#8890aa;--text3:#555f7a;
+  --accent:#4f8ef7;--accent2:#7c5df7;
+  --green:#3dd68c;--orange:#f7944f;--red:#f75f5f;
+  --yellow:#f7d74f;--pink:#f75fa8;--teal:#4fd6c8;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;line-height:1.5}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999}
+
+/* ---- LANDING / DROP ZONE ---- */
+#landing {
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;padding:40px;
+}
+.landing-logo{width:64px;height:64px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:28px;font-weight:700;color:#fff;box-shadow:0 0 48px rgba(79,142,247,0.4)}
+.landing-title{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-align:center}
+.landing-sub{font-size:13px;color:var(--text3);text-align:center;max-width:420px}
+
+.drop-zone {
+  width:100%;max-width:480px;border:2px dashed var(--border2);border-radius:16px;
+  padding:48px 32px;text-align:center;cursor:pointer;transition:all .25s;
+  background:var(--bg2);position:relative;
+}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(79,142,247,.06);box-shadow:0 0 32px rgba(79,142,247,.15)}
+.drop-icon{font-size:40px;margin-bottom:16px;display:block}
+.drop-title{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px}
+.drop-hint{font-size:12px;color:var(--text3);line-height:1.6}
+.open-btn{
+  margin-top:20px;display:inline-block;padding:10px 28px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:8px;color:#fff;font-family:var(--mono);font-size:11px;
+  font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  box-shadow:0 0 24px rgba(79,142,247,.35);transition:all .2s;
+}
+.open-btn:hover{box-shadow:0 0 36px rgba(79,142,247,.55);transform:translateY(-1px)}
+.file-list{font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:16px;line-height:2;text-align:left}
+.file-list span{color:var(--green)}
+
+.progress-wrap{width:100%;max-width:480px}
+.progress-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:2px;transition:width .3s;width:0%}
+.progress-label{font-family:var(--mono);font-size:10px;color:var(--text3);text-align:center;letter-spacing:.06em}
+
+.err-box{background:rgba(247,95,95,.1);border:1px solid rgba(247,95,95,.3);border-radius:8px;padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--red);max-width:480px;display:none}
+
+/* ---- DASHBOARD ---- */
+#dashboard{display:none}
+
+header{
+  background:linear-gradient(135deg,#0f1320,#151c2f);border-bottom:1px solid var(--border2);
+  padding:16px 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(8px);
+}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:700;color:#fff;box-shadow:0 0 20px rgba(79,142,247,.4)}
+.header-title{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.header-sub{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.04em}
+.header-right{display:flex;align-items:center;gap:12px}
+.ds-switcher{display:flex;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px}
+.ds-btn{padding:5px 16px;border-radius:5px;border:none;cursor:pointer;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text2);background:transparent;transition:all .2s}
+.ds-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 16px rgba(79,142,247,.5)}
+.ds-btn:hover:not(.active){color:var(--text);background:var(--border)}
+.reload-btn{padding:6px 14px;border:1px solid var(--border2);border-radius:6px;background:transparent;color:var(--text3);font-family:var(--mono);font-size:10px;cursor:pointer;transition:all .2s;letter-spacing:.05em}
+.reload-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+.container{max-width:1400px;margin:0 auto;padding:24px}
+
+.kpi-strip{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:24px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden;transition:border-color .2s}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi.accent::before{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.kpi.green::before{background:var(--green)}
+.kpi.teal::before{background:var(--teal)}
+.kpi.orange::before{background:var(--orange)}
+.kpi.pink::before{background:var(--pink)}
+.kpi.yellow::before{background:var(--yellow)}
+.kpi-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.kpi-val{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--text);line-height:1}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
+
+.section-label{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.full{margin-bottom:18px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative}
+.card-title{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text2);margin-bottom:14px}
+
+.legend-strip{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.model-sel-wrap{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.model-sel-btn{padding:4px 12px;border:1px solid var(--border2);border-radius:5px;font-family:var(--mono);font-size:9px;color:var(--text3);cursor:pointer;background:transparent;transition:all .2s}
+.model-sel-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(79,142,247,.1)}
+.model-sel-btn:hover:not(.active){border-color:var(--text3);color:var(--text)}
+
+.thresh-label{font-size:10px;color:var(--text3);margin-right:4px;font-family:var(--mono)}
+
+.cm-cell{padding:12px 6px;text-align:center;border-radius:4px;font-family:var(--mono);font-size:11px}
+.cm-cell.tn{background:rgba(61,214,140,.15);color:var(--green)}
+.cm-cell.fp{background:rgba(247,95,95,.1);color:var(--red)}
+.cm-cell.fn{background:rgba(247,148,79,.1);color:var(--orange)}
+.cm-cell.tp{background:rgba(79,142,247,.15);color:var(--accent)}
+.cm-label{font-size:9px;color:var(--text3);margin-bottom:4px;display:block}
+.cm-val{font-size:16px;font-weight:700}
+
+/* Table */
+.search-row{display:flex;gap:10px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.search-input{flex:1;min-width:160px;padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text3)}
+.chip{padding:3px 9px;border-radius:20px;border:1px solid var(--border2);font-family:var(--mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:all .15s;color:var(--text3);background:transparent}
+.results-table{width:100%;border-collapse:collapse;font-size:11px}
+.results-table th{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:7px 10px;border-bottom:1px solid var(--border2);text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+.results-table th:hover{color:var(--text2)}
+.results-table th.sort-asc::after{content:' ↑';color:var(--accent)}
+.results-table th.sort-desc::after{content:' ↓';color:var(--accent)}
+.results-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.03);font-family:var(--mono);font-size:10px;color:var(--text2)}
+.results-table tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
+.badge{display:inline-block;padding:2px 6px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+
+footer{border-top:1px solid var(--border);padding:14px 24px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:.05em}
+
+@media(max-width:900px){.kpi-strip{grid-template-columns:repeat(3,1fr)}.grid-2,.grid-3{grid-template-columns:1fr}header{flex-direction:column;gap:10px;align-items:flex-start}}
+@media(max-width:600px){.kpi-strip{grid-template-columns:1fr 1fr}.container{padding:12px}}
+</style>
+</head>
+<body>
+
+<!-- ====== LANDING ====== -->
+<div id="landing">
+  <div class="landing-logo">FD</div>
+  <div>
+    <div class="landing-title">Fraud Detection · Dashboard</div>
+    <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:6px">5 Models · 6 Balancing Strategies · Report II</div>
+  </div>
+
+  <div class="drop-zone" id="drop-zone">
+    <span class="drop-icon">📂</span>
+    <div class="drop-title">Open outputs folder</div>
+    <div class="drop-hint">Select your <code style="color:var(--accent)">outputs/</code> folder containing<br><code>comparison_table.csv</code>, threshold CSVs and <code>hyperparameter_analysis.csv</code></div>
+    <button class="open-btn" id="open-btn">Choose Folder</button>
+    <div class="file-list" id="file-list"></div>
+  </div>
+
+  <div class="progress-wrap" id="progress-wrap" style="display:none">
+    <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label">Loading…</div>
+  </div>
+
+  <div class="err-box" id="err-box"></div>
+</div>
+
+<!-- ====== DASHBOARD ====== -->
+<div id="dashboard">
+<header>
+  <div class="header-left">
+    <div class="logo-mark">FD</div>
+    <div>
+      <div class="header-title">Fraud Detection · Experiment Dashboard</div>
+      <div class="header-sub" id="hdr-sub">—</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="ds-switcher" id="ds-switcher"></div>
+    <button class="reload-btn" onclick="backToLanding()">↩ Load New Folder</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="kpi-strip">
+    <div class="kpi accent"><div class="kpi-label">Configurations</div><div class="kpi-val" id="kpi-configs">—</div><div class="kpi-sub" id="kpi-configs-sub"></div></div>
+    <div class="kpi green"><div class="kpi-label">Best PR-AUC</div><div class="kpi-val" id="kpi-prauc">—</div><div class="kpi-sub" id="kpi-prauc-sub"></div></div>
+    <div class="kpi teal"><div class="kpi-label">Best ROC-AUC</div><div class="kpi-val" id="kpi-rocauc">—</div><div class="kpi-sub" id="kpi-rocauc-sub"></div></div>
+    <div class="kpi orange"><div class="kpi-label">Best Recall</div><div class="kpi-val" id="kpi-recall">—</div><div class="kpi-sub" id="kpi-recall-sub"></div></div>
+    <div class="kpi pink"><div class="kpi-label">Best F1</div><div class="kpi-val" id="kpi-f1">—</div><div class="kpi-sub" id="kpi-f1-sub"></div></div>
+    <div class="kpi yellow"><div class="kpi-label">Min Cost</div><div class="kpi-val" id="kpi-cost">—</div><div class="kpi-sub" id="kpi-cost-sub"></div></div>
+  </div>
+
+  <div class="section-label">Performance by Model &amp; Strategy</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">PR-AUC by Model &amp; Strategy</div>
+      <div class="legend-strip" id="legend-strat"></div>
+      <div style="position:relative;height:230px"><canvas id="chartPR"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Recall (Fraud) by Model &amp; Strategy</div>
+      <div style="position:relative;height:230px"><canvas id="chartRecall"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">ROC-AUC by Model &amp; Strategy</div>
+      <div style="position:relative;height:210px"><canvas id="chartROC"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">F1-Score by Model &amp; Strategy</div>
+      <div style="position:relative;height:210px"><canvas id="chartF1"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Cross-Validation Stability</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">CV PR-AUC — Mean ± Std (best config per model)</div>
+      <div style="position:relative;height:230px"><canvas id="chartCV"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">CV Recall — Mean ± Std (best config per model)</div>
+      <div style="position:relative;height:230px"><canvas id="chartCVRecall"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Cost Analysis &amp; Training Time</div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">Expected Cost at Optimal Threshold</div>
+      <div style="position:relative;height:230px"><canvas id="chartCost"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Mean Training Time (s) — Best Config per Model</div>
+      <div style="position:relative;height:230px"><canvas id="chartTime"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">ROC-AUC vs PR-AUC Trade-off Space</div>
+  <div class="full card">
+    <div class="card-title">All Configurations — Hover for Details</div>
+    <div class="legend-strip" id="legend-model"></div>
+    <div style="position:relative;height:300px"><canvas id="chartScatter"></canvas></div>
+  </div>
+
+  <div class="section-label">Decision Threshold Analysis</div>
+  <div class="full card">
+    <div class="card-title">Precision / Recall / F1 / Cost vs Threshold</div>
+    <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px">
+      <div><span class="thresh-label">Model:</span><div class="model-sel-wrap" id="thresh-model-sel"></div></div>
+      <div><span class="thresh-label">Strategy:</span><div class="model-sel-wrap" id="thresh-strat-sel"></div></div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:2;min-width:260px">
+        <div class="legend-strip">
+          <div class="leg-item"><span class="leg-dot" style="background:var(--orange)"></span>Recall</div>
+          <div class="leg-item"><span class="leg-dot" style="background:var(--accent)"></span>Precision</div>
+          <div class="leg-item"><span class="leg-dot" style="background:var(--green)"></span>F1-Score</div>
+        </div>
+        <div style="position:relative;height:250px"><canvas id="chartThresh"></canvas></div>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <div class="thresh-label" style="margin-bottom:10px">Expected Cost vs Threshold</div>
+        <div style="position:relative;height:250px"><canvas id="chartThreshCost"></canvas></div>
+      </div>
+      <div style="flex:1;min-width:160px">
+        <div class="thresh-label" style="margin-bottom:8px">Confusion Matrix (optimal threshold)</div>
+        <div id="cm-display"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Consolidated Results Table</div>
+  <div class="full card">
+    <div class="card-title">All Models × All Strategies — Sortable &amp; Filterable</div>
+    <div class="search-row">
+      <input class="search-input" id="table-search" placeholder="Filter by model or strategy…" oninput="filterTable()">
+      <div style="display:flex;gap:5px;flex-wrap:wrap" id="table-model-filter"></div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="results-table" id="results-table">
+        <thead><tr>
+          <th onclick="sortTable('model')">Model</th>
+          <th onclick="sortTable('strategy')">Strategy</th>
+          <th onclick="sortTable('roc_auc')">ROC-AUC</th>
+          <th onclick="sortTable('pr_auc')">PR-AUC</th>
+          <th onclick="sortTable('recall')">Recall</th>
+          <th onclick="sortTable('precision')">Precision</th>
+          <th onclick="sortTable('f1')">F1</th>
+          <th onclick="sortTable('accuracy')">Accuracy</th>
+          <th onclick="sortTable('expected_cost')">Exp. Cost</th>
+          <th onclick="sortTable('threshold')">Threshold</th>
+          <th>TP</th><th>FP</th><th>FN</th><th>TN</th>
+        </tr></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<footer id="footer-bar">Fraud Detection Lab · Report II · Chart.js 4.4</footer>
+</div><!-- end dashboard -->
+
+<script>
+// ===== CONSTANTS =====
+const MODEL_LABELS = {decision_tree:'Decision Tree',extra_trees:'Extra Trees',logreg:'Log. Reg.',random_forest:'Random Forest',xgboost:'XGBoost'};
+const STRAT_LABELS  = {baseline:'Baseline',class_weight:'Class Weight',undersample:'Undersample',oversample:'Oversample',smote:'SMOTE',adasyn:'ADASYN'};
+const STRAT_COLORS  = {baseline:'#4f8ef7',class_weight:'#3dd68c',undersample:'#f7944f',oversample:'#f75fa8',smote:'#7c5df7',adasyn:'#4fd6c8'};
+const MODEL_COLORS  = {decision_tree:'#f7d74f',extra_trees:'#3dd68c',logreg:'#4f8ef7',random_forest:'#f7944f',xgboost:'#f75fa8'};
+Chart.defaults.color = '#555f7a';
+Chart.defaults.borderColor = 'rgba(255,255,255,.05)';
+
+// ===== GLOBAL STATE =====
+let DATA = {};          // { creditcard:{...}, paysim:{...} }
+let activeDs = '';
+let datasets = [];
+let models = [];
+let strategies = [];
+let activeThreshModel = '';
+let activeThreshStrat = '';
+let charts = {};
+let tableSort = {col:'pr_auc', dir:-1};
+let tableFilter = '';
+let tableModelFilter = new Set();
+
+// ===== CSV PARSER =====
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h=>h.trim());
+  return lines.slice(1).map(line => {
+    // handle quoted fields (params column)
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let ch of line) {
+      if (ch==='"') { inQ=!inQ; } else if (ch===',' && !inQ) { cols.push(cur.trim()); cur=''; } else { cur+=ch; }
+    }
+    cols.push(cur.trim());
+    const obj = {};
+    headers.forEach((h,i) => obj[h] = cols[i] ?? '');
+    return obj;
+  });
+}
+
+function pf(v) { return parseFloat(v)||0; }
+function pi(v) { return parseInt(v)||0; }
+
+// ===== FILE READING =====
+async function readFile(fileHandle) {
+  const file = await fileHandle.getFile();
+  return file.text();
+}
+
+// ===== LOAD FROM FOLDER HANDLE =====
+async function loadFolder(dirHandle) {
+  showProgress(0, 'Scanning folder…');
+
+  // Collect all file handles
+  const files = {};
+  for await (const [name, handle] of dirHandle.entries()) {
+    if (handle.kind === 'file') files[name] = handle;
+  }
+  // Also check a nested hyperparameter analysis subfolder
+  for await (const [name, handle] of dirHandle.entries()) {
+    if (handle.kind === 'directory' && name.toLowerCase().includes('hyperparameter')) {
+      for await (const [n2, h2] of handle.entries()) {
+        if (h2.kind === 'file') files[name+'/'+n2] = h2;
+      }
+    }
+  }
+
+  const fileNames = Object.keys(files);
+
+  // Validate
+  if (!fileNames.includes('comparison_table.csv')) {
+    throw new Error('comparison_table.csv not found in selected folder. Please select the outputs/ folder.');
+  }
+
+  showProgress(10, 'Reading comparison_table.csv…');
+  const compText = await readFile(files['comparison_table.csv']);
+  const compRows = parseCSV(compText);
+
+  // Discover datasets, models, strategies
+  const dsSet = new Set(), mSet = new Set(), sSet = new Set();
+  compRows.forEach(r=>{ dsSet.add(r.dataset); mSet.add(r.model); sSet.add(r.strategy); });
+  datasets   = [...dsSet].sort();
+  models     = [...mSet].sort();
+  strategies = [...sSet].sort();
+
+  // Build lookup
+  const compLookup = {};
+  compRows.forEach(r => compLookup[`${r.dataset}__${r.model}__${r.strategy}`] = r);
+
+  showProgress(25, 'Reading hyperparameter_analysis.csv…');
+  let hpRows = [];
+  const hpKey = fileNames.find(n => n.endsWith('hyperparameter_analysis.csv') && !n.includes('/'));
+  if (hpKey) {
+    const hpText = await readFile(files[hpKey]);
+    hpRows = parseCSV(hpText);
+  } else {
+    // try sub-folder files
+    const hpKeys = fileNames.filter(n=>n.endsWith('hyperparameter_analysis.csv'));
+    for (const k of hpKeys) {
+      const t = await readFile(files[k]);
+      hpRows.push(...parseCSV(t));
+    }
+  }
+
+  // Best HP per (dataset, model) = highest mean_cv_pr_auc
+  const hpBest = {};
+  hpRows.forEach(r => {
+    const k = `${r.dataset}__${r.model}`;
+    if (!hpBest[k] || pf(r.mean_cv_pr_auc) > pf(hpBest[k].mean_cv_pr_auc)) hpBest[k] = r;
+  });
+
+  showProgress(40, 'Reading threshold files…');
+  const threshFiles = fileNames.filter(n => n.endsWith('__thresholds.csv') && !n.includes('/'));
+  const threshData = {};
+  let done = 0;
+  for (const fn of threshFiles) {
+    const text = await readFile(files[fn]);
+    const key = fn.replace('__thresholds.csv','');
+    threshData[key] = parseCSV(text);
+    done++;
+    showProgress(40 + Math.round(done/threshFiles.length*40), `Reading ${fn}…`);
+  }
+
+  showProgress(82, 'Building data structures…');
+
+  // Build per-dataset data
+  DATA = {};
+  for (const ds of datasets) {
+    const d = {
+      table:[], scatterData:[],
+      prAuc:{}, recall:{}, rocAuc:{}, f1:{}, cost:{},
+      cvMeanPR:{}, cvStdPR:{}, cvMeanROC:{}, cvStdROC:{},
+      cvMeanRecall:{}, cvStdRecall:{}, fitTime:{},
+      thresholds:{}
+    };
+    for (const s of strategies) { d.prAuc[s]=[]; d.recall[s]=[]; d.rocAuc[s]=[]; d.f1[s]=[]; d.cost[s]=[]; }
+
+    for (const m of models) {
+      for (const s of strategies) {
+        const r = compLookup[`${ds}__${m}__${s}`];
+        d.prAuc[s].push(r ? pf(r.test_pr_auc) : 0);
+        d.recall[s].push(r ? pf(r.test_recall) : 0);
+        d.rocAuc[s].push(r ? pf(r.test_roc_auc) : 0);
+        d.f1[s].push(r ? pf(r.test_f1) : 0);
+        d.cost[s].push(r ? pf(r.test_expected_cost) : 0);
+        if (r) {
+          d.table.push({model:m,strategy:s,roc_auc:pf(r.test_roc_auc),pr_auc:pf(r.test_pr_auc),recall:pf(r.test_recall),precision:pf(r.test_precision),f1:pf(r.test_f1),accuracy:pf(r.test_accuracy),expected_cost:pf(r.test_expected_cost),threshold:pf(r.best_threshold_from_val),tn:pi(r.test_tn),fp:pi(r.test_fp),fn:pi(r.test_fn),tp:pi(r.test_tp)});
+          d.scatterData.push({x:pf(r.test_roc_auc),y:pf(r.test_pr_auc),model:m,strategy:s});
+        }
+      }
+      const hp = hpBest[`${ds}__${m}`];
+      if (hp) {
+        d.cvMeanPR[m]=pf(hp.mean_cv_pr_auc); d.cvStdPR[m]=pf(hp.std_cv_pr_auc);
+        d.cvMeanROC[m]=pf(hp.mean_cv_roc_auc); d.cvStdROC[m]=pf(hp.std_cv_roc_auc);
+        d.cvMeanRecall[m]=pf(hp.mean_cv_recall); d.cvStdRecall[m]=pf(hp.std_cv_recall);
+        d.fitTime[m]=pf(hp.mean_fit_time);
+      }
+    }
+
+    // Threshold files for this dataset
+    for (const [key, rows] of Object.entries(threshData)) {
+      if (key.startsWith(ds+'__')) {
+        const rest = key.slice(ds.length+2);
+        d.thresholds[rest] = rows.map(r=>({t:pf(r.threshold),recall:pf(r.recall),precision:pf(r.precision),f1:pf(r.f1),cost:pf(r.expected_cost)}));
+      }
+    }
+
+    DATA[ds] = d;
+  }
+
+  showProgress(100, 'Done!');
+  return { datasets, models, strategies };
+}
+
+// ===== FOLDER PICKER =====
+document.getElementById('open-btn').addEventListener('click', async () => {
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode:'read' });
+    await processFolder(dirHandle);
+  } catch(e) {
+    if (e.name !== 'AbortError') showError(e.message);
+  }
+});
+
+// Drag & drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', ()=>dz.classList.remove('drag-over'));
+dz.addEventListener('drop', async e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const item = e.dataTransfer.items[0];
+  if (item && item.kind==='file') {
+    try {
+      const handle = await item.getAsFileSystemHandle();
+      if (handle.kind==='directory') { await processFolder(handle); return; }
+    } catch(e2) {}
+  }
+  showError('Please drop a folder (not a file).');
+});
+
+async function processFolder(dirHandle) {
+  hideError();
+  document.getElementById('progress-wrap').style.display='block';
+  document.getElementById('file-list').innerHTML = '';
+  try {
+    const info = await loadFolder(dirHandle);
+    activeDs = info.datasets[0] || '';
+    tableModelFilter = new Set(models);
+    // Default threshold selection
+    const thKeys = Object.keys(DATA[activeDs]?.thresholds || {});
+    if (thKeys.length) { const p=thKeys[0].split('__'); activeThreshModel=p[0]; activeThreshStrat=p[1]; }
+    showDashboard(dirHandle.name, info);
+  } catch(e) {
+    showError(e.message);
+    document.getElementById('progress-wrap').style.display='none';
+  }
+}
+
+function showProgress(pct, label) {
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-label').textContent = label;
+}
+function showError(msg) {
+  const b = document.getElementById('err-box');
+  b.textContent = '⚠ '+msg; b.style.display='block';
+}
+function hideError() { document.getElementById('err-box').style.display='none'; }
+
+function showDashboard(folderName, info) {
+  document.getElementById('landing').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('hdr-sub').textContent = `${folderName} · ${info.models.length} models · ${info.strategies.length} strategies · ${info.datasets.length} datasets`;
+  document.getElementById('footer-bar').textContent = `Fraud Detection Lab · Report II · ${folderName} · ${info.models.length} models × ${info.strategies.length} strategies × ${info.datasets.length} datasets · Chart.js 4.4`;
+
+  // Dataset switcher
+  const sw = document.getElementById('ds-switcher');
+  sw.innerHTML = info.datasets.map(ds=>
+    `<button class="ds-btn ${ds===activeDs?'active':''}" onclick="setDataset('${ds}')">${ds.charAt(0).toUpperCase()+ds.slice(1)}</button>`
+  ).join('');
+
+  renderAll();
+}
+
+function backToLanding() {
+  destroyAllCharts();
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('landing').style.display='flex';
+  document.getElementById('progress-wrap').style.display='none';
+  document.getElementById('progress-fill').style.width='0%';
+}
+
+// ===== DATASET SWITCH =====
+function setDataset(ds) {
+  activeDs = ds;
+  document.querySelectorAll('.ds-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent.toLowerCase().replace(/\s+/g,'').includes(ds.replace(/\s+/g,'')));
+  });
+  tableModelFilter = new Set(models);
+  const thKeys = Object.keys(DATA[activeDs]?.thresholds || {});
+  if (thKeys.length) { const p=thKeys[0].split('__'); activeThreshModel=p[0]; activeThreshStrat=p[1]; }
+  renderAll();
+}
+
+// ===== KPIs =====
+function renderKPIs() {
+  const d = DATA[activeDs];
+  let bPR={v:0,m:'',s:''}, bROC={v:0,m:'',s:''}, bRec={v:0,m:'',s:''}, bF1={v:0,m:'',s:''}, bCost={v:Infinity,m:'',s:''};
+  d.table.forEach(r=>{
+    if(r.pr_auc>bPR.v) bPR={v:r.pr_auc,m:r.model,s:r.strategy};
+    if(r.roc_auc>bROC.v) bROC={v:r.roc_auc,m:r.model,s:r.strategy};
+    if(r.recall>bRec.v) bRec={v:r.recall,m:r.model,s:r.strategy};
+    if(r.f1>bF1.v) bF1={v:r.f1,m:r.model,s:r.strategy};
+    if(r.expected_cost<bCost.v) bCost={v:r.expected_cost,m:r.model,s:r.strategy};
+  });
+  const ml = m => MODEL_LABELS[m]||m;
+  const sl = s => STRAT_LABELS[s]||s;
+  const fc = v => v>=1e6?(v/1e6).toFixed(2)+'M':(v/1e3).toFixed(1)+'k';
+
+  document.getElementById('kpi-configs').textContent=d.table.length;
+  document.getElementById('kpi-configs-sub').textContent=`${models.length} models × ${strategies.length} strategies`;
+  document.getElementById('kpi-prauc').textContent=bPR.v.toFixed(4);
+  document.getElementById('kpi-prauc-sub').textContent=`${ml(bPR.m)} + ${sl(bPR.s)}`;
+  document.getElementById('kpi-rocauc').textContent=bROC.v.toFixed(4);
+  document.getElementById('kpi-rocauc-sub').textContent=`${ml(bROC.m)} + ${sl(bROC.s)}`;
+  document.getElementById('kpi-recall').textContent=bRec.v.toFixed(4);
+  document.getElementById('kpi-recall-sub').textContent=`${ml(bRec.m)} + ${sl(bRec.s)}`;
+  document.getElementById('kpi-f1').textContent=bF1.v.toFixed(4);
+  document.getElementById('kpi-f1-sub').textContent=`${ml(bF1.m)} + ${sl(bF1.s)}`;
+  document.getElementById('kpi-cost').textContent=fc(bCost.v);
+  document.getElementById('kpi-cost-sub').textContent=`${ml(bCost.m)} + ${sl(bCost.s)}`;
+}
+
+// ===== LEGENDS =====
+function renderLegends() {
+  document.getElementById('legend-strat').innerHTML=strategies.map(s=>
+    `<div class="leg-item"><span class="leg-dot" style="background:${STRAT_COLORS[s]||'#888'}"></span>${STRAT_LABELS[s]||s}</div>`
+  ).join('');
+  document.getElementById('legend-model').innerHTML=models.map(m=>
+    `<div class="leg-item"><span class="leg-dot" style="background:${MODEL_COLORS[m]||'#888'}"></span>${MODEL_LABELS[m]||m}</div>`
+  ).join('');
+}
+
+// ===== CHART HELPERS =====
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function destroyAllCharts(){Object.keys(charts).forEach(id=>{charts[id].destroy();delete charts[id];});}
+
+const TICK_FONT = {size:9, family:"'Space Mono',monospace"};
+const GRID_COLOR = 'rgba(255,255,255,.04)';
+const scalesBase = (ylabel, ymin, ymax, xLabel) => ({
+  x:{ticks:{font:TICK_FONT,color:'#555f7a',maxRotation:20},grid:{color:GRID_COLOR},border:{color:'#252a3a'},title:xLabel?{display:true,text:xLabel,font:{size:9},color:'#555f7a'}:{}},
+  y:{...(ymin!==undefined?{min:ymin}:{}), ...(ymax!==undefined?{max:ymax}:{}), ticks:{font:TICK_FONT,color:'#555f7a',callback:v=>v.toFixed(2)},grid:{color:GRID_COLOR},border:{color:'#252a3a'},title:{display:!!ylabel,text:ylabel||'',font:{size:9},color:'#555f7a'}}
+});
+
+function makeGroupedBar(id, labels, datasets, ylabel, ymin, ymax) {
+  destroyChart(id);
+  charts[id]=new Chart(document.getElementById(id),{
+    type:'bar', data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>`${STRAT_LABELS[ctx.dataset.label]||ctx.dataset.label}: ${ctx.parsed.y.toFixed(4)}`}}},
+      scales:scalesBase(ylabel,ymin,ymax)
+    }
+  });
+}
+
+function stratDs(metric) {
+  const d=DATA[activeDs];
+  return strategies.map(s=>({label:s,data:d[metric][s],backgroundColor:(STRAT_COLORS[s]||'#888')+'aa',borderColor:STRAT_COLORS[s]||'#888',borderWidth:1,borderRadius:3}));
+}
+
+function renderBarCharts() {
+  const ml = models.map(m=>MODEL_LABELS[m]||m);
+  makeGroupedBar('chartPR', ml, stratDs('prAuc'), 'PR-AUC', 0, 1.05);
+  makeGroupedBar('chartRecall', ml, stratDs('recall'), 'Recall', 0, 1.05);
+  const rocMin = Math.floor(Math.min(...strategies.flatMap(s=>DATA[activeDs].rocAuc[s]))*10)/10;
+  makeGroupedBar('chartROC', ml, stratDs('rocAuc'), 'ROC-AUC', Math.max(0.5,rocMin-0.05), 1.01);
+  makeGroupedBar('chartF1', ml, stratDs('f1'), 'F1-Score', 0, 1.05);
+
+  // Cost chart
+  const d=DATA[activeDs];
+  const mag = activeDs==='paysim'?1e6:1e3;
+  const costLabel = activeDs==='paysim'?'Cost (×1M)':'Cost (×1k)';
+  destroyChart('chartCost');
+  charts['chartCost']=new Chart(document.getElementById('chartCost'),{
+    type:'bar', data:{labels:ml, datasets:strategies.map(s=>({label:s,data:d.cost[s].map(v=>+(v/mag).toFixed(3)),backgroundColor:(STRAT_COLORS[s]||'#888')+'aa',borderColor:STRAT_COLORS[s]||'#888',borderWidth:1,borderRadius:3}))},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},scales:scalesBase(costLabel,0)}
+  });
+}
+
+// ===== CV CHARTS WITH ERROR BARS =====
+function makeCV(id, means, stds, ylabel, colors) {
+  const ymin = Math.max(0, Math.floor((Math.min(...means.filter(v=>v>0))-0.15)*10)/10);
+  destroyChart(id);
+  charts[id]=new Chart(document.getElementById(id),{
+    type:'bar', data:{labels:models.map(m=>MODEL_LABELS[m]||m), datasets:[{label:'CV',data:means,backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:1,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(4)} ± ${stds[ctx.dataIndex].toFixed(4)}`}}},
+      scales:scalesBase(ylabel,ymin,1.01)
+    },
+    plugins:[{id:'eb',afterDraw(chart){
+      const {ctx,scales:{x,y}}=chart;
+      means.forEach((val,i)=>{
+        if(!stds[i]) return;
+        const xc=x.getPixelForValue(i), yT=y.getPixelForValue(Math.min(val+stds[i],1)),yB=y.getPixelForValue(Math.max(val-stds[i],0));
+        ctx.save();ctx.beginPath();ctx.strokeStyle=colors[i];ctx.lineWidth=2;
+        ctx.moveTo(xc,yT);ctx.lineTo(xc,yB);ctx.moveTo(xc-5,yT);ctx.lineTo(xc+5,yT);ctx.moveTo(xc-5,yB);ctx.lineTo(xc+5,yB);
+        ctx.stroke();ctx.restore();
+      });
+    }}]
+  });
+}
+
+function renderCVCharts() {
+  const d=DATA[activeDs];
+  const colors=models.map(m=>MODEL_COLORS[m]||'#888');
+  makeCV('chartCV', models.map(m=>d.cvMeanPR[m]||0), models.map(m=>d.cvStdPR[m]||0), 'CV PR-AUC', colors);
+  makeCV('chartCVRecall', models.map(m=>d.cvMeanRecall[m]||0), models.map(m=>d.cvStdRecall[m]||0), 'CV Recall', colors);
+}
+
+// ===== TRAINING TIME =====
+function renderTimeChart() {
+  const d=DATA[activeDs], colors=models.map(m=>MODEL_COLORS[m]||'#888');
+  destroyChart('chartTime');
+  charts['chartTime']=new Chart(document.getElementById('chartTime'),{
+    type:'bar', data:{labels:models.map(m=>MODEL_LABELS[m]||m), datasets:[{data:models.map(m=>d.fitTime[m]||0),backgroundColor:colors.map(c=>c+'99'),borderColor:colors,borderWidth:1,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(2)} s`}}},scales:scalesBase('Fit time (s)',0)}
+  });
+}
+
+// ===== SCATTER =====
+function renderScatter() {
+  const d=DATA[activeDs];
+  const datasets=models.map(m=>({
+    label:MODEL_LABELS[m]||m,
+    data:d.scatterData.filter(p=>p.model===m).map(p=>({x:p.x,y:p.y,strategy:p.strategy})),
+    backgroundColor:(MODEL_COLORS[m]||'#888')+'bb', borderColor:MODEL_COLORS[m]||'#888',
+    borderWidth:1,pointRadius:7,pointHoverRadius:10
+  }));
+  destroyChart('chartScatter');
+  charts['chartScatter']=new Chart(document.getElementById('chartScatter'),{
+    type:'scatter',data:{datasets},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label} + ${STRAT_LABELS[ctx.raw.strategy]||ctx.raw.strategy}: ROC=${ctx.raw.x.toFixed(4)}, PR=${ctx.raw.y.toFixed(4)}`}}},
+      scales:{...scalesBase(null),x:{...scalesBase(null).x,title:{display:true,text:'ROC-AUC',font:{size:9},color:'#555f7a'},ticks:{font:TICK_FONT,color:'#555f7a',callback:v=>v.toFixed(2)},grid:{color:GRID_COLOR},border:{color:'#252a3a'}},y:{...scalesBase(null).y,title:{display:true,text:'PR-AUC',font:{size:9},color:'#555f7a'},ticks:{font:TICK_FONT,color:'#555f7a',callback:v=>v.toFixed(2)},grid:{color:GRID_COLOR},border:{color:'#252a3a'}}}
+    }
+  });
+}
+
+// ===== THRESHOLD SELECTORS =====
+function buildThreshSelectors() {
+  const d=DATA[activeDs];
+  const keys=Object.keys(d.thresholds);
+  const mods=[...new Set(keys.map(k=>k.split('__')[0]))];
+  document.getElementById('thresh-model-sel').innerHTML=mods.map(m=>
+    `<button class="model-sel-btn ${m===activeThreshModel?'active':''}" onclick="selectThreshModel('${m}')">${MODEL_LABELS[m]||m}</button>`
+  ).join('');
+  const avail=keys.filter(k=>k.startsWith(activeThreshModel+'__')).map(k=>k.split('__')[1]);
+  document.getElementById('thresh-strat-sel').innerHTML=avail.map(s=>
+    `<button class="model-sel-btn ${s===activeThreshStrat?'active':''}" onclick="selectThreshStrat('${s}')">${STRAT_LABELS[s]||s}</button>`
+  ).join('');
+}
+
+function selectThreshModel(m) {
+  activeThreshModel=m;
+  const avail=Object.keys(DATA[activeDs].thresholds).filter(k=>k.startsWith(m+'__')).map(k=>k.split('__')[1]);
+  if(!avail.includes(activeThreshStrat)) activeThreshStrat=avail[0]||'';
+  buildThreshSelectors(); renderThreshCharts();
+}
+function selectThreshStrat(s){ activeThreshStrat=s; buildThreshSelectors(); renderThreshCharts(); }
+
+function renderThreshCharts() {
+  const key=`${activeThreshModel}__${activeThreshStrat}`;
+  const rows=DATA[activeDs].thresholds[key];
+  if(!rows||!rows.length) return;
+  const labels=rows.map(r=>r.t.toFixed(2));
+  const lineBase={responsive:true,maintainAspectRatio:false,animation:{duration:250},plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+    scales:{x:{ticks:{font:TICK_FONT,color:'#555f7a',maxTicksLimit:12,autoSkip:true},grid:{color:GRID_COLOR},border:{color:'#252a3a'},title:{display:true,text:'Threshold',font:{size:9},color:'#555f7a'}},y:{ticks:{font:TICK_FONT,color:'#555f7a',callback:v=>v.toFixed(2)},grid:{color:GRID_COLOR},border:{color:'#252a3a'}}}
+  };
+
+  destroyChart('chartThresh');
+  charts['chartThresh']=new Chart(document.getElementById('chartThresh'),{
+    type:'line', data:{labels, datasets:[
+      {label:'Recall',data:rows.map(r=>r.recall),borderColor:'#f7944f',backgroundColor:'rgba(247,148,79,.08)',borderWidth:2,pointRadius:1,tension:.3,fill:true},
+      {label:'Precision',data:rows.map(r=>r.precision),borderColor:'#4f8ef7',backgroundColor:'transparent',borderWidth:2,pointRadius:1,tension:.3,borderDash:[4,3]},
+      {label:'F1',data:rows.map(r=>r.f1),borderColor:'#3dd68c',backgroundColor:'transparent',borderWidth:2,pointRadius:1,tension:.3,borderDash:[2,2]}
+    ]}, options:{...lineBase, scales:{...lineBase.scales, y:{...lineBase.scales.y, min:0, max:1.05}}}
+  });
+
+  const mag=activeDs==='paysim'?1e6:1e3;
+  const cl=activeDs==='paysim'?'Cost (M)':'Cost (k)';
+  destroyChart('chartThreshCost');
+  charts['chartThreshCost']=new Chart(document.getElementById('chartThreshCost'),{
+    type:'line', data:{labels, datasets:[{label:'Cost',data:rows.map(r=>+(r.cost/mag).toFixed(3)),borderColor:'#f75fa8',backgroundColor:'rgba(247,95,168,.1)',borderWidth:2,pointRadius:1,tension:.3,fill:true}]},
+    options:{...lineBase,plugins:{...lineBase.plugins,tooltip:{...lineBase.plugins.tooltip,callbacks:{label:ctx=>`${ctx.parsed.y.toFixed(3)} ${cl}`}}}, scales:{...lineBase.scales,y:{...lineBase.scales.y,title:{display:true,text:cl,font:{size:9},color:'#555f7a'}}}}
+  });
+
+  // Confusion matrix from comparison table at optimal threshold
+  const cr=DATA[activeDs].table.find(r=>r.model===activeThreshModel&&r.strategy===activeThreshStrat)||{tn:0,fp:0,fn:0,tp:0,threshold:0};
+  document.getElementById('cm-display').innerHTML=`
+    <div style="font-size:9px;color:var(--text3);margin-bottom:8px;font-family:var(--mono)">OPTIMAL THRESHOLD: ${cr.threshold?.toFixed(2)||'—'}</div>
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:3px;align-items:center">
+      <div></div>
+      <div style="text-align:center;font-size:9px;color:var(--text3);font-family:var(--mono);padding:4px">Pred 0</div>
+      <div style="text-align:center;font-size:9px;color:var(--text3);font-family:var(--mono);padding:4px">Pred 1</div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);writing-mode:vertical-lr;transform:rotate(180deg);padding:4px">Act 0</div>
+      <div class="cm-cell tn"><span class="cm-label">TN</span><span class="cm-val">${cr.tn.toLocaleString()}</span></div>
+      <div class="cm-cell fp"><span class="cm-label">FP</span><span class="cm-val">${cr.fp.toLocaleString()}</span></div>
+      <div style="font-size:9px;color:var(--text3);font-family:var(--mono);writing-mode:vertical-lr;transform:rotate(180deg);padding:4px">Act 1</div>
+      <div class="cm-cell fn"><span class="cm-label">FN</span><span class="cm-val">${cr.fn.toLocaleString()}</span></div>
+      <div class="cm-cell tp"><span class="cm-label">TP</span><span class="cm-val">${cr.tp.toLocaleString()}</span></div>
+    </div>`;
+}
+
+// ===== TABLE =====
+function buildTableModelFilter() {
+  document.getElementById('table-model-filter').innerHTML=models.map(m=>{
+    const on=tableModelFilter.has(m);
+    const c=MODEL_COLORS[m]||'#888';
+    return `<button class="chip" style="background:${on?c+'33':'transparent'};border-color:${c}66;color:${on?c:''}" onclick="toggleModelFilter('${m}')">${MODEL_LABELS[m]||m}</button>`;
+  }).join('');
+}
+function toggleModelFilter(m){if(tableModelFilter.has(m)) tableModelFilter.delete(m); else tableModelFilter.add(m); buildTableModelFilter(); renderTable();}
+function filterTable(){tableFilter=document.getElementById('table-search').value.toLowerCase(); renderTable();}
+function sortTable(col){
+  document.querySelectorAll('#results-table th').forEach(th=>{th.classList.remove('sort-asc','sort-desc');});
+  if(tableSort.col===col) tableSort.dir*=-1; else {tableSort.col=col;tableSort.dir=-1;}
+  const cols=['model','strategy','roc_auc','pr_auc','recall','precision','f1','accuracy','expected_cost','threshold'];
+  const idx=cols.indexOf(col);
+  if(idx>=0){const th=document.querySelectorAll('#results-table th')[idx]; th.classList.add(tableSort.dir===-1?'sort-desc':'sort-asc');}
+  renderTable();
+}
+function renderTable(){
+  const d=DATA[activeDs];
+  let rows=[...d.table].filter(r=>tableModelFilter.has(r.model));
+  if(tableFilter) rows=rows.filter(r=>r.model.includes(tableFilter)||r.strategy.includes(tableFilter)||(MODEL_LABELS[r.model]||'').toLowerCase().includes(tableFilter)||(STRAT_LABELS[r.strategy]||'').toLowerCase().includes(tableFilter));
+  const {col,dir}=tableSort;
+  rows.sort((a,b)=>typeof a[col]==='string'?a[col].localeCompare(b[col])*dir:(a[col]-b[col])*dir);
+
+  const SBGS={baseline:'rgba(79,142,247,.15)',class_weight:'rgba(61,214,140,.15)',undersample:'rgba(247,148,79,.15)',oversample:'rgba(247,95,168,.15)',smote:'rgba(124,93,247,.15)',adasyn:'rgba(79,214,200,.15)'};
+  const SCLS={baseline:'#4f8ef7',class_weight:'#3dd68c',undersample:'#f7944f',oversample:'#f75fa8',smote:'#7c5df7',adasyn:'#4fd6c8'};
+  const fc=v=>v>=1e6?(v/1e6).toFixed(3)+'M':(v/1e3).toFixed(1)+'k';
+  const cc=(v,lo,hi)=>v>=hi?'var(--green)':v>=lo?'var(--orange)':'var(--red)';
+
+  document.getElementById('table-body').innerHTML=rows.map(r=>{
+    const mc=MODEL_COLORS[r.model]||'#888';
+    return `<tr>
+      <td><span style="color:${mc};font-weight:700">${MODEL_LABELS[r.model]||r.model}</span></td>
+      <td><span class="badge" style="background:${SBGS[r.strategy]||''};color:${SCLS[r.strategy]||''}">${STRAT_LABELS[r.strategy]||r.strategy}</span></td>
+      <td>${r.roc_auc.toFixed(4)}</td>
+      <td style="color:${cc(r.pr_auc,0.7,0.85)};font-weight:600">${r.pr_auc.toFixed(4)}</td>
+      <td style="color:${cc(r.recall,0.75,0.9)};font-weight:600">${r.recall.toFixed(4)}</td>
+      <td>${r.precision.toFixed(4)}</td>
+      <td>${r.f1.toFixed(4)}</td>
+      <td>${r.accuracy.toFixed(6)}</td>
+      <td>${fc(r.expected_cost)}</td>
+      <td>${r.threshold.toFixed(2)}</td>
+      <td style="color:var(--green)">${r.tp}</td>
+      <td style="color:var(--orange)">${r.fp}</td>
+      <td style="color:var(--red)">${r.fn}</td>
+      <td style="color:var(--text3)">${r.tn.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== MASTER RENDER =====
+function renderAll(){
+  renderKPIs(); renderLegends(); renderBarCharts(); renderCVCharts(); renderTimeChart();
+  renderScatter(); buildThreshSelectors(); renderThreshCharts(); buildTableModelFilter(); renderTable();
+}
+</script>
+</body>
+</html>
