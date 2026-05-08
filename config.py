@@ -61,7 +61,7 @@ HYPERPARAMETER_DATASET_SETTINGS = {
     "paysim": {
         # Keep methodologically valid CV tuning, but skip memory-heavy synthetic
         # oversamplers with large ensembles on full PaySim.
-        "strategies": ["class_weight"],
+        "strategies": HYPERPARAMETER_STRATEGIES,
         # Fewer folds lowers concurrent fit memory use.
         "cv_folds": 2,
         # Use a stratified subsample for robust but lighter tuning.
@@ -71,9 +71,9 @@ HYPERPARAMETER_DATASET_SETTINGS = {
         "search_pre_dispatch": 1,
         # Tree ensembles and xgboost are forced to single-thread in tuning.
         "model_n_jobs_overrides": {
-            "random_forest": 1,
-            "extra_trees": 1,
-            "xgboost": 1,
+            "random_forest": 2,
+            "extra_trees": 2,
+            "xgboost": 2,
         },
         # Smaller randomized search budget for PaySim.
         "n_iter": 4,

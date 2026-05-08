@@ -288,23 +288,23 @@ def run_all_experiments(include_is_flagged_fraud: bool = False, dataset_names: l
                 _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_models, model_names)
             )
 
-    if not results_rows:
-        raise RuntimeError("No experiments were run because no configured dataset files were found.")
+        if not results_rows:
+            raise RuntimeError("No experiments were run because no configured dataset files were found.")
 
-    results_df = pd.DataFrame(results_rows).sort_values(
-        by=["dataset", "test_expected_cost", "test_pr_auc"], ascending=[True, True, False]
-    )
-    results_path = OUTPUT_DIR / "comparison_table.csv"
-    results_df.to_csv(results_path, index=False)
-    print(f"\n[INFO] Saved comparison table: {results_path}")
-
-    if hyperparameter_rows:
-        hyperparameter_df = pd.DataFrame(hyperparameter_rows).sort_values(
-            by=["dataset", "model", "strategy", "rank_pr_auc"]
+        results_df = pd.DataFrame(results_rows).sort_values(
+            by=["dataset", "test_expected_cost", "test_pr_auc"], ascending=[True, True, False]
         )
-        hyperparameter_path = OUTPUT_DIR / "hyperparameter_analysis.csv"
-        hyperparameter_df.to_csv(hyperparameter_path, index=False)
-        print(f"[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
+        results_path = OUTPUT_DIR / f"comparison_table_{dataset_name}.csv"
+        results_df.to_csv(results_path, index=False)
+        print(f"\n[INFO] Saved comparison table: {results_path}")
+
+        if hyperparameter_rows:
+            hyperparameter_df = pd.DataFrame(hyperparameter_rows).sort_values(
+                by=["dataset", "model", "strategy", "rank_pr_auc"]
+            )
+            hyperparameter_path = OUTPUT_DIR / f"hyperparameter_analysis_{dataset_name}.csv"
+            hyperparameter_df.to_csv(hyperparameter_path, index=False)
+            print(f"[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
 
 
 def run_hyperparameters_only(include_is_flagged_fraud: bool = False, dataset_names: list[str] | None = None):
@@ -338,15 +338,15 @@ def run_hyperparameters_only(include_is_flagged_fraud: bool = False, dataset_nam
             _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_models, model_names)
         )
 
-    if not hyperparameter_rows:
-        raise RuntimeError("No hyperparameter analysis was run because no configured dataset files were found.")
+        if not hyperparameter_rows:
+            raise RuntimeError("No hyperparameter analysis was run because no configured dataset files were found.")
 
-    hyperparameter_df = pd.DataFrame(hyperparameter_rows).sort_values(
-        by=["dataset", "model", "strategy", "rank_pr_auc"]
-    )
-    hyperparameter_path = OUTPUT_DIR / "hyperparameter_analysis.csv"
-    hyperparameter_df.to_csv(hyperparameter_path, index=False)
-    print(f"\n[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
+        hyperparameter_df = pd.DataFrame(hyperparameter_rows).sort_values(
+            by=["dataset", "model", "strategy", "rank_pr_auc"]
+        )
+        hyperparameter_path = OUTPUT_DIR / f"hyperparameter_analysis_{dataset_name}.csv"
+        hyperparameter_df.to_csv(hyperparameter_path, index=False)
+        print(f"\n[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
 
 
 if __name__ == "__main__":
