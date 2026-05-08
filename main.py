@@ -24,6 +24,7 @@ from config import (
     CV_FOLDS,
     DATASETS,
     HYPERPARAMETER_MODELS,
+    HYPERPARAMETER_DATASET_SETTINGS,
     HYPERPARAMETER_N_ITER,
     HYPERPARAMETER_STRATEGIES,
     MODEL_NAMES,
@@ -67,13 +68,33 @@ def _parse_args():
         action="store_true",
         help="Include PaySim isFlaggedFraud feature. Default excludes it to reduce leakage risk.",
     )
+    parser.add_argument(
+        "--hyperparams-only",
+        action="store_true",
+        help="Run only hyperparameter analysis and skip the full experiment pipeline.",
+    )
     return parser.parse_args()
 
 
 def _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_models, model_names):
     """Run compact CV-based hyperparameter analysis and return one row per candidate."""
     rows = []
-    cv = StratifiedKFold(n_splits=CV_FOLDS, shuffle=True, random_state=RANDOM_STATE)
+    settings = HYPERPARAMETER_DATASET_SETTINGS.get(dataset_name, HYPERPARAMETER_DATASET_SETTINGS["default"])
+    cv = StratifiedKFold(n_splits=settings["cv_folds"], shuffle=True, random_state=RANDOM_STATE)
+
+    X_tune = X_train_temp
+    y_tune = y_train_temp
+    if settings["subsample_frac"] < 1.0:
+        # PaySim is large; tuning on a stratified subset preserves class ratio
+        # while preventing memory blowups during CV + search.
+        _, X_tune, _, y_tune = train_test_split(
+            X_train_temp,
+            y_train_temp,
+            test_size=settings["subsample_frac"],
+            stratify=y_train_temp,
+            random_state=RANDOM_STATE,
+        )
+        print(f"  [INFO] {dataset_name} tuning subset size: {len(X_tune):,}/{len(X_train_temp):,}")
 
     for model_name in HYPERPARAMETER_MODELS:
         if model_name not in model_names:
@@ -83,20 +104,25 @@ def _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_
         if not param_grid:
             continue
 
-        n_iter = min(HYPERPARAMETER_N_ITER, len(list(ParameterGrid(param_grid))))
+        n_iter = min(settings["n_iter"], len(list(ParameterGrid(param_grid))))
 
-        for strategy in HYPERPARAMETER_STRATEGIES:
+        for strategy in settings["strategies"]:
             exp_name = experiment_name(dataset_name, model_name, strategy)
             print(f"  -> hyperparameters: {exp_name}")
 
-            preprocessor = build_preprocessor(dataset_name, X_train_temp)
+            model_for_search = clone(base_models[model_name])
+            n_jobs_override = settings["model_n_jobs_overrides"].get(model_name)
+            if n_jobs_override is not None and "n_jobs" in model_for_search.get_params():
+                model_for_search.set_params(n_jobs=n_jobs_override)
+
+            preprocessor = build_preprocessor(dataset_name, X_tune)
             pipeline = build_pipeline(
                 dataset_name=dataset_name,
                 preprocessor=preprocessor,
-                model=clone(base_models[model_name]),
+                model=model_for_search,
                 model_name=model_name,
                 strategy=strategy,
-                y_train=y_train_temp,
+                y_train=y_tune,
             )
             search = RandomizedSearchCV(
                 estimator=pipeline,
@@ -106,11 +132,12 @@ def _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_
                 refit="pr_auc",
                 cv=cv,
                 random_state=RANDOM_STATE,
-                n_jobs=-1,
+                n_jobs=settings["search_n_jobs"],
+                pre_dispatch=settings["search_pre_dispatch"],
                 return_train_score=False,
                 error_score=np.nan,
             )
-            search.fit(X_train_temp, y_train_temp)
+            search.fit(X_tune, y_tune)
 
             cv_results = pd.DataFrame(search.cv_results_)
             for _, result in cv_results.iterrows():
@@ -280,9 +307,57 @@ def run_all_experiments(include_is_flagged_fraud: bool = False, dataset_names: l
         print(f"[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
 
 
+def run_hyperparameters_only(include_is_flagged_fraud: bool = False, dataset_names: list[str] | None = None):
+    """Run only hyperparameter analysis and save hyperparameter_analysis.csv."""
+    ensure_dir(OUTPUT_DIR)
+
+    base_models = get_base_models()
+    model_names = [m for m in MODEL_NAMES if m in base_models]
+    selected_datasets = list(DATASETS) if dataset_names is None else dataset_names
+
+    hyperparameter_rows = []
+
+    for dataset_name in selected_datasets:
+        print(f"\n[INFO] Hyperparameter-only mode: {dataset_name}")
+        try:
+            X, y = load_dataset(dataset_name, include_is_flagged_fraud=include_is_flagged_fraud)
+        except FileNotFoundError as exc:
+            print(f"[WARN] Skipping dataset '{dataset_name}': {exc}")
+            continue
+
+        # We only need train_temp split for CV-based hyperparameter search.
+        X_train_temp, _, y_train_temp, _ = train_test_split(
+            X,
+            y,
+            test_size=TEST_SIZE,
+            stratify=y,
+            random_state=RANDOM_STATE,
+        )
+
+        hyperparameter_rows.extend(
+            _run_hyperparameter_analysis(dataset_name, X_train_temp, y_train_temp, base_models, model_names)
+        )
+
+    if not hyperparameter_rows:
+        raise RuntimeError("No hyperparameter analysis was run because no configured dataset files were found.")
+
+    hyperparameter_df = pd.DataFrame(hyperparameter_rows).sort_values(
+        by=["dataset", "model", "strategy", "rank_pr_auc"]
+    )
+    hyperparameter_path = OUTPUT_DIR / "hyperparameter_analysis.csv"
+    hyperparameter_df.to_csv(hyperparameter_path, index=False)
+    print(f"\n[INFO] Saved hyperparameter analysis: {hyperparameter_path}")
+
+
 if __name__ == "__main__":
     args = _parse_args()
-    run_all_experiments(
-        include_is_flagged_fraud=args.include_is_flagged_fraud,
-        dataset_names=args.dataset,
-    )
+    if args.hyperparams_only:
+        run_hyperparameters_only(
+            include_is_flagged_fraud=args.include_is_flagged_fraud,
+            dataset_names=args.dataset,
+        )
+    else:
+        run_all_experiments(
+            include_is_flagged_fraud=args.include_is_flagged_fraud,
+            dataset_names=args.dataset,
+        )

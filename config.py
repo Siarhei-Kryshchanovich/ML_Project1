@@ -44,3 +44,38 @@ MODEL_NAMES = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboo
 # MODEL_NAMES = ["extra_trees"]
 HYPERPARAMETER_MODELS = ["logreg", "decision_tree", "random_forest", "extra_trees", "xgboost"]
 HYPERPARAMETER_STRATEGIES = ["class_weight", "smote"]
+
+# Dataset-specific controls for hyperparameter analysis.
+# PaySim is very large, so we intentionally constrain tuning to avoid
+# RAM spikes from nested CV + resampling + parallel tree ensembles.
+HYPERPARAMETER_DATASET_SETTINGS = {
+    "default": {
+        "strategies": HYPERPARAMETER_STRATEGIES,
+        "cv_folds": CV_FOLDS,
+        "n_iter": HYPERPARAMETER_N_ITER,
+        "subsample_frac": 1.0,
+        "search_n_jobs": -1,
+        "search_pre_dispatch": "2*n_jobs",
+        "model_n_jobs_overrides": {},
+    },
+    "paysim": {
+        # Keep methodologically valid CV tuning, but skip memory-heavy synthetic
+        # oversamplers with large ensembles on full PaySim.
+        "strategies": ["class_weight"],
+        # Fewer folds lowers concurrent fit memory use.
+        "cv_folds": 2,
+        # Use a stratified subsample for robust but lighter tuning.
+        "subsample_frac": 0.30,
+        # Single-process search avoids joblib duplicating large arrays.
+        "search_n_jobs": 1,
+        "search_pre_dispatch": 1,
+        # Tree ensembles and xgboost are forced to single-thread in tuning.
+        "model_n_jobs_overrides": {
+            "random_forest": 1,
+            "extra_trees": 1,
+            "xgboost": 1,
+        },
+        # Smaller randomized search budget for PaySim.
+        "n_iter": 4,
+    },
+}
