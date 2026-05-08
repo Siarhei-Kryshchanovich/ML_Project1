@@ -13,11 +13,9 @@ from config import RANDOM_STATE
 
 try:
     from xgboost import XGBClassifier
-
-    XGB_AVAILABLE = True
 except ImportError:
-    XGB_AVAILABLE = False
     XGBClassifier = None
+    print("[INFO] xgboost is not installed. Please check requirements.")
 
 
 def get_base_models() -> dict:
@@ -39,9 +37,7 @@ def get_base_models() -> dict:
             n_jobs=-1,
             random_state=RANDOM_STATE,
         ),
-    }
-    if XGB_AVAILABLE:
-        models["xgboost"] = XGBClassifier(
+        "xgboost": XGBClassifier(
             n_estimators=250,
             max_depth=6,
             learning_rate=0.08,
@@ -52,6 +48,7 @@ def get_base_models() -> dict:
             random_state=RANDOM_STATE,
             n_jobs=-1,
         )
+    }
     return models
 
 

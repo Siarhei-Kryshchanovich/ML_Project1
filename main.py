@@ -36,7 +36,7 @@ from config import (
 )
 from data_loader import load_dataset
 from evaluation import compute_metrics, save_confusion_matrix, save_curves, tune_threshold
-from models import XGB_AVAILABLE, build_pipeline, get_base_models, get_hyperparameter_grid
+from models import build_pipeline, get_base_models, get_hyperparameter_grid
 from preprocessing import build_preprocessor
 from utils import ensure_dir, experiment_name
 
@@ -59,7 +59,7 @@ def _parse_args():
         "--dataset",
         choices=sorted(DATASETS.keys()),
         nargs="+",
-        default=None,
+        default=DATASETS,
         help="Dataset(s) to run. Omit to run all configured datasets.",
     )
     parser.add_argument(
@@ -139,8 +139,6 @@ def run_all_experiments(include_is_flagged_fraud: bool = False, dataset_names: l
     ensure_dir(PLOTS_DIR)
 
     base_models = get_base_models()
-    if "xgboost" not in base_models:
-        print("[INFO] xgboost is not installed. XGBoost experiments will be skipped.")
 
     model_names = [m for m in MODEL_NAMES if m in base_models]
 
