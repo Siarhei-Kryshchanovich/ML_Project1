@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Fraud Detection - Report 3 Presentation</title>
+    <!-- Outfit & Inter Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-gradient: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+            --panel-bg: rgba(30, 41, 59, 0.45);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-glow: rgba(56, 189, 248, 0.3);
+            --accent: #38bdf8;
+            --accent-hover: #7dd3fc;
+            --success: #34d399;
+            --warning: #fbbf24;
+            --danger: #f87171;
+            --font-display: 'Outfit', sans-serif;
+            --font-sans: 'Inter', sans-serif;
+            --shadow-glow: 0 0 30px rgba(56, 189, 248, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 2.5rem;
+            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.6);
+            border-bottom: 1px solid var(--panel-border);
+            z-index: 10;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .logo-container i {
+            font-size: 1.8rem;
+            color: var(--accent);
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .logo-container h1 {
+            font-family: var(--font-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .team-badge {
+            font-family: var(--font-display);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.04);
+            padding: 0.4rem 1rem;
+            border-radius: 9999px;
+            border: 1px solid var(--panel-border);
+        }
+
+        /* Slide Deck Container */
+        .presentation-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            width: 90%;
+            max-width: 1300px;
+            height: 80vh;
+            max-height: 750px;
+            backdrop-filter: blur(16px) saturate(120%);
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            z-index: 2;
+        }
+
+        /* Slide Content Components */
+        .slide-title {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.8rem;
+        }
+
+        .slide-title i {
+            color: var(--accent);
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            gap: 2rem;
+            min-height: 0; /* Important for inner flex scrolling */
+        }
+
+        .slide-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 0;
+        }
+
+        .slide-col.flex-grow-2 {
+            flex: 1.5;
+        }
+
+        /* Typography & elements */
+        p {
+            font-size: 1.05rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        p strong {
+            color: var(--text-primary);
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        li {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            line-height: 1.5;
+        }
+
+        li i {
+            color: var(--accent);
+            margin-top: 0.25rem;
+            font-size: 0.9rem;
+        }
+
+        .highlight-box {
+            background: rgba(56, 189, 248, 0.05);
+            border-left: 4px solid var(--accent);
+            padding: 1.2rem;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 1rem;
+        }
+
+        .highlight-box h4 {
+            font-family: var(--font-display);
+            font-size: 1.15rem;
+            color: var(--text-primary);
+            margin-bottom: 0.4rem;
+        }
+
+        /* Controls Footer */
+        footer {
+            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.6);
+            border-top: 1px solid var(--panel-border);
+            padding: 1rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .slide-progress-container {
+            flex: 1;
+            max-width: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            height: 6px;
+            border-radius: 9999px;
+            overflow: hidden;
+            margin-right: 2rem;
+        }
+
+        .slide-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent-hover) 100%);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+            border-radius: 9999px;
+            transition: width 0.4s ease;
+        }
+
+        .navigation-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .btn-control {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--panel-border);
+            color: var(--text-primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-control:hover:not(:disabled) {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.15);
+        }
+
+        .btn-control:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .btn-fullscreen {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            transition: color 0.2s ease;
+        }
+
+        .btn-fullscreen:hover {
+            color: var(--text-primary);
+        }
+
+        /* Interactive Tabs inside slides */
+        .tab-container {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 0.3rem;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            align-self: flex-start;
+            margin-bottom: 1.2rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 0.5rem 1.2rem;
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #0f172a;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        /* Interactive Table styling */
+        .table-wrapper {
+            width: 100%;
+            overflow-y: auto;
+            max-height: 400px;
+            border-radius: 14px;
+            border: 1px solid var(--panel-border);
+            background: rgba(15, 23, 42, 0.25);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.88rem;
+        }
+
+        th, td {
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        th {
+            background: rgba(15, 23, 42, 0.55);
+            font-family: var(--font-display);
+            font-weight: 600;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            backdrop-filter: blur(8px);
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-primary);
+        }
+
+        tr.highlighted-row td {
+            background: rgba(52, 211, 153, 0.05);
+            font-weight: 600;
+            border-left: 3px solid var(--success);
+        }
+
+        /* Title Slide Custom Layout */
+        .title-slide-layout {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100%;
+        }
+
+        .title-project {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+
+        .title-main {
+            font-family: var(--font-display);
+            font-size: 3.4rem;
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #ffffff 40%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .title-subtitle {
+            font-size: 1.4rem;
+            color: var(--text-secondary);
+            margin-bottom: 3.5rem;
+        }
+
+        .title-meta {
+            display: flex;
+            gap: 3rem;
+            margin-top: 1rem;
+        }
+
+        .meta-author {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--panel-border);
+            padding: 0.8rem 1.5rem;
+            border-radius: 16px;
+        }
+
+        .meta-author i {
+            color: var(--accent);
+            font-size: 1.2rem;
+        }
+
+        .meta-author span {
+            font-family: var(--font-display);
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        /* Cost Dashboard Widgets */
+        .savings-dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .widget {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.2rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .widget::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .widget.cost-default::before { background: var(--danger); }
+        .widget.cost-tuned::before { background: var(--success); }
+        .widget.cost-savings::before { background: var(--accent); }
+
+        .widget-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.4rem;
+        }
+
+        .widget-val {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .widget-val.savings-pct {
+            color: var(--success);
+        }
+
+        /* Image Frame */
+        .plot-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 0.5rem;
+            position: relative;
+        }
+
+        .plot-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .plot-caption {
+            position: absolute;
+            bottom: 0.5rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--panel-border);
+            padding: 0.3rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Interactive Graph container */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            min-height: 250px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Top Bar -->
+    <header>
+        <div class="logo-container">
+            <i class="fa-solid fa-shield-halved"></i>
+            <h1>Fraud Guard AI</h1>
+        </div>
+        <div class="team-badge">
+            <i class="fa-solid fa-users-rectangle"></i> Siarhei Kryshchanovich & Mykola Tatarenkov
+        </div>
+    </header>
+
+    <!-- Presentation Canvas -->
+    <div class="presentation-container">
+
+        <!-- Slide 1: Title -->
+        <div class="slide active" id="slide-1">
+            <div class="title-slide-layout">
+                <div class="title-project">Laboratory Project No. 1</div>
+                <div class="title-main">Financial Fraud Detection</div>
+                <div class="title-subtitle">Classification of Highly Imbalanced Data: Experimental Conclusions</div>
+                <div class="title-meta">
+                    <div class="meta-author">
+                        <i class="fa-regular fa-id-card"></i>
+                        <span>Mykola Tatarenkov (53631)</span>
+                    </div>
+                    <div class="meta-author">
+                        <i class="fa-regular fa-id-card"></i>
+                        <span>Siarhei Kryshchanovich (57763)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: Project Objectives -->
+        <div class="slide" id="slide-2">
+            <div class="slide-title"><i class="fa-solid fa-bullseye"></i> Project Objectives & Challenges</div>
+            <div class="slide-body">
+                <div class="slide-col">
+                    <div class="highlight-box">
+                        <h4>Extreme Class Imbalance</h4>
+                        <p>Financial transaction logs are heavily biased towards legitimate activity, with fraud cases typically making up <strong>less than 1%</strong> of all logs (e.g. 0.17% in Credit Card and 0.13% in PaySim).</p>
+                    </div>
+                    <div class="highlight-box">
+                        <h4>Asymmetric Cost Matrix</h4>
+                        <p>Missing a fraudulent transaction (False Negative) has major financial consequences ($COST_{FN} = 500$), whereas generating a false alarm (False Positive) is far cheaper ($COST_{FP} = 10$).</p>
+                    </div>
+                </div>
+                <div class="slide-col">
+                    <p>Our experiment framework targets a comprehensive evaluation of:</p>
+                    <ul>
+                        <li><li><i class="fa-solid fa-circle-check"></i> <strong>5 Model Families:</strong> Logistic Regression, Decision Trees, Random Forests, Extra Trees, and XGBoost.</li>
+                        <li><li><i class="fa-solid fa-circle-check"></i> <strong>6 Imbalance Handling Approaches:</strong> Baseline, Class Weighting, Random Undersampling, Random Oversampling, SMOTE, and ADASYN.</li>
+                        <li><li><i class="fa-solid fa-circle-check"></i> <strong>Validation-Based Threshold sweeps:</strong> Moving decision boundaries away from 0.5 to minimize the expected business cost.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: Consolidated Results -->
+        <div class="slide" id="slide-3">
+            <div class="slide-title"><i class="fa-solid fa-table-list"></i> Experimental Results Table</div>
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchResultsTab('creditcard')">Credit Card Dataset</button>
+                <button class="tab-btn" onclick="switchResultsTab('paysim')">PaySim Dataset</button>
+            </div>
+            <div class="slide-body">
+                <div class="slide-col flex-grow-2">
+                    <div class="table-wrapper">
+                        <!-- Credit card table -->
+                        <table id="table-creditcard">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Strategy</th>
+                                    <th>Threshold</th>
+                                    <th>ROC-AUC</th>
+                                    <th>PR-AUC</th>
+                                    <th>Recall</th>
+                                    <th>Precision</th>
+                                    <th>Expected Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlighted-row">
+                                    <td>xgboost</td>
+                                    <td>class_weight</td>
+                                    <td>0.06</td>
+                                    <td>0.9707</td>
+                                    <td>0.8273</td>
+                                    <td>0.8182</td>
+                                    <td>0.7714</td>
+                                    <td>9,240</td>
+                                </tr>
+                                <tr>
+                                    <td>extra_trees</td>
+                                    <td>oversample</td>
+                                    <td>0.45</td>
+                                    <td>0.9698</td>
+                                    <td>0.7920</td>
+                                    <td>0.8182</td>
+                                    <td>0.7105</td>
+                                    <td>9,330</td>
+                                </tr>
+                                <tr>
+                                    <td>random_forest</td>
+                                    <td>class_weight</td>
+                                    <td>0.17</td>
+                                    <td>0.9574</td>
+                                    <td>0.7863</td>
+                                    <td>0.8182</td>
+                                    <td>0.6639</td>
+                                    <td>9,410</td>
+                                </tr>
+                                <tr>
+                                    <td>extra_trees</td>
+                                    <td>smote</td>
+                                    <td>0.52</td>
+                                    <td>0.9629</td>
+                                    <td>0.7887</td>
+                                    <td>0.8182</td>
+                                    <td>0.6585</td>
+                                    <td>9,420</td>
+                                </tr>
+                                <tr>
+                                    <td>random_forest</td>
+                                    <td>undersample</td>
+                                    <td>0.84</td>
+                                    <td>0.9767</td>
+                                    <td>0.6852</td>
+                                    <td>0.8182</td>
+                                    <td>0.6532</td>
+                                    <td>9,430</td>
+                                </tr>
+                                <tr>
+                                    <td>xgboost</td>
+                                    <td>baseline</td>
+                                    <td>0.01</td>
+                                    <td>0.9746</td>
+                                    <td>0.8211</td>
+                                    <td>0.8182</td>
+                                    <td>0.6378</td>
+                                    <td>9,460</td>
+                                </tr>
+                                <tr>
+                                    <td>extra_trees</td>
+                                    <td>baseline</td>
+                                    <td>0.02</td>
+                                    <td>0.9735</td>
+                                    <td>0.7955</td>
+                                    <td>0.8182</td>
+                                    <td>0.5586</td>
+                                    <td>9,640</td>
+                                </tr>
+                                <tr>
+                                    <td>random_forest</td>
+                                    <td>baseline</td>
+                                    <td>0.02</td>
+                                    <td>0.9725</td>
+                                    <td>0.8062</td>
+                                    <td>0.8283</td>
+                                    <td>0.4141</td>
+                                    <td>9,660</td>
+                                </tr>
+                                <tr>
+                                    <td>logreg</td>
+                                    <td>baseline</td>
+                                    <td>0.02</td>
+                                    <td>0.9639</td>
+                                    <td>0.7091</td>
+                                    <td>0.8081</td>
+                                    <td>0.6349</td>
+                                    <td>9,960</td>
+                                </tr>
+                                <tr>
+                                    <td>decision_tree</td>
+                                    <td>class_weight</td>
+                                    <td>0.91</td>
+                                    <td>0.8751</td>
+                                    <td>0.6012</td>
+                                    <td>0.7778</td>
+                                    <td>0.2973</td>
+                                    <td>12,820</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <!-- Paysim table (hidden initially) -->
+                        <table id="table-paysim" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>Model</th>
+                                    <th>Strategy</th>
+                                    <th>Threshold</th>
+                                    <th>ROC-AUC</th>
+                                    <th>PR-AUC</th>
+                                    <th>Recall</th>
+                                    <th>Precision</th>
+                                    <th>Expected Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="highlighted-row">
+                                    <td>xgboost</td>
+                                    <td>smote</td>
+                                    <td>0.87</td>
+                                    <td>0.9998</td>
+                                    <td>0.9612</td>
+                                    <td>0.9866</td>
+                                    <td>0.4936</td>
+                                    <td>27,620</td>
+                                </tr>
+                                <tr>
+                                    <td>xgboost</td>
+                                    <td>oversample</td>
+                                    <td>0.79</td>
+                                    <td>0.9999</td>
+                                    <td>0.9614</td>
+                                    <td>0.9866</td>
+                                    <td>0.4836</td>
+                                    <td>28,300</td>
+                                </tr>
+                                <tr>
+                                    <td>xgboost</td>
+                                    <td>adasyn</td>
+                                    <td>0.94</td>
+                                    <td>0.9998</td>
+                                    <td>0.9574</td>
+                                    <td>0.9836</td>
+                                    <td>0.4951</td>
+                                    <td>29,970</td>
+                                </tr>
+                                <tr>
+                                    <td>xgboost</td>
+                                    <td>class_weight</td>
+                                    <td>0.79</td>
+                                    <td>0.9999</td>
+                                    <td>0.9590</td>
+                                    <td>0.9817</td>
+                                    <td>0.5130</td>
+                                    <td>30,300</td>
+                                </tr>
+                                <tr>
+                                    <td>xgboost</td>
+                                    <td>baseline</td>
+                                    <td>0.03</td>
+                                    <td>0.9999</td>
+                                    <td>0.9606</td>
+                                    <td>0.9817</td>
+                                    <td>0.5053</td>
+                                    <td>30,780</td>
+                                </tr>
+                                <tr>
+                                    <td>random_forest</td>
+                                    <td>smote</td>
+                                    <td>0.78</td>
+                                    <td>0.9995</td>
+                                    <td>0.9125</td>
+                                    <td>0.9549</td>
+                                    <td>0.3426</td>
+                                    <td>67,090</td>
+                                </tr>
+                                <tr>
+                                    <td>random_forest</td>
+                                    <td>baseline</td>
+                                    <td>0.01</td>
+                                    <td>0.9986</td>
+                                    <td>0.8688</td>
+                                    <td>0.9129</td>
+                                    <td>0.3076</td>
+                                    <td>105,250</td>
+                                </tr>
+                                <tr>
+                                    <td>decision_tree</td>
+                                    <td>smote</td>
+                                    <td>0.92</td>
+                                    <td>0.9980</td>
+                                    <td>0.6281</td>
+                                    <td>0.9361</td>
+                                    <td>0.1786</td>
+                                    <td>123,180</td>
+                                </tr>
+                                <tr>
+                                    <td>logreg</td>
+                                    <td>smote</td>
+                                    <td>0.93</td>
+                                    <td>0.9894</td>
+                                    <td>0.5892</td>
+                                    <td>0.7412</td>
+                                    <td>0.1392</td>
+                                    <td>287,770</td>
+                                </tr>
+                                <tr>
+                                    <td>extra_trees</td>
+                                    <td>smote</td>
+                                    <td>0.80</td>
+                                    <td>0.9743</td>
+                                    <td>0.5705</td>
+                                    <td>0.6650</td>
+                                    <td>0.3697</td>
+                                    <td>293,620</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="slide-col">
+                    <p><strong>Ensembles Dominate:</strong> On both datasets, tree-based ensembles (XGBoost, Extra Trees, Random Forest) occupy the top performance slots. XGBoost achieves the lowest expected cost in both scenarios.</p>
+                    <p><strong>Baseline Performance:</strong> Logistic Regression (linear baseline) provides decent recall under extreme threshold settings, but lacks the non-linear capacity to compete with ensembles.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: Balancing Impact -->
+        <div class="slide" id="slide-4">
+            <div class="slide-title"><i class="fa-solid fa-scale-balanced"></i> Balancing Methods Impact</div>
+            <div class="slide-body">
+                <div class="slide-col">
+                    <div class="highlight-box" style="border-color: var(--success); background: rgba(52, 211, 153, 0.03);">
+                        <h4 style="color: var(--success);"><i class="fa-solid fa-compress"></i> Resolving Fraud Class Recall</h4>
+                        <p>Standard models default to classifying all cases as legitimate because it yields 99.8% accuracy. Applying <strong>SMOTE</strong>, <strong>Oversampling</strong>, or <strong>Class Weighting</strong> forces the model to learn fraud features, increasing Recall up to <strong>0.9866</strong> (XGBoost SMOTE on PaySim).</p>
+                    </div>
+                    <div class="highlight-box" style="border-color: var(--warning); background: rgba(251, 191, 36, 0.03);">
+                        <h4 style="color: var(--warning);"><i class="fa-solid fa-arrows-split-up-and-left"></i> The Precision Trade-off</h4>
+                        <p>Lowering decision thresholds to catch fraud increases false alarms. Under our cost ratio ($COST_{FN}=500$, $COST_{FP}=10$), this trade-off is highly profitable: incurring a few more false alarms (low precision) to avoid missed fraud is heavily favored.</p>
+                    </div>
+                </div>
+                <div class="slide-col">
+                    <div class="chart-container">
+                        <canvas id="balancingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: ROC-AUC vs PR-AUC -->
+        <div class="slide" id="slide-5">
+            <div class="slide-title"><i class="fa-solid fa-chart-line"></i> Evaluation Metrics: ROC-AUC vs PR-AUC</div>
+            <div class="slide-body">
+                <div class="slide-col">
+                    <p>In highly imbalanced contexts, <strong>ROC-AUC</strong> can show deceptively optimistic scores (e.g. 0.98+ for weak classifiers) because it relies on the False Positive Rate, which is diluted by the massive count of True Negatives:</p>
+                    <div class="highlight-box" style="font-family: monospace; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                        FPR = FP / (TN + FP)
+                    </div>
+                    <p><strong>PR-AUC</strong> isolates the minority class performance directly, entirely ignoring the TN denominator:</p>
+                    <div class="highlight-box" style="font-family: monospace; font-size: 0.95rem; margin-bottom: 1.5rem;">
+                        Precision = TP / (TP + FP)
+                    </div>
+                    <p>For example, PaySim Extra Trees with ADASYN achieves a high ROC-AUC of **0.9834** but its PR-AUC is a terrible **0.2849**, highlighting its operational failure.</p>
+                </div>
+                <div class="slide-col">
+                    <div class="plot-container">
+                        <img src="../outputs/plots/creditcard__xgboost__class_weight_pr.png" alt="XGBoost PR Curve" id="pr-curve-img">
+                        <div class="plot-caption">Credit Card XGBoost Class Weight Precision-Recall Curve</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: Model Stability -->
+        <div class="slide" id="slide-6">
+            <div class="slide-title"><i class="fa-solid fa-arrow-trend-up"></i> Stability & Cross-Validation</div>
+            <div class="slide-body">
+                <div class="slide-col flex-grow-2">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Dataset</th>
+                                    <th>Model</th>
+                                    <th>Strategy</th>
+                                    <th>Mean CV PR-AUC</th>
+                                    <th>Std CV PR-AUC</th>
+                                    <th>Mean CV Recall</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="background: rgba(56, 189, 248, 0.05);">
+                                    <td>paysim</td>
+                                    <td>xgboost</td>
+                                    <td>smote</td>
+                                    <td>0.9225</td>
+                                    <td>&plusmn; 0.0030</td>
+                                    <td>0.9473</td>
+                                </tr>
+                                <tr>
+                                    <td>paysim</td>
+                                    <td>random_forest</td>
+                                    <td>smote</td>
+                                    <td>0.8846</td>
+                                    <td>&plusmn; 0.0030</td>
+                                    <td>0.9047</td>
+                                </tr>
+                                <tr style="background: rgba(56, 189, 248, 0.05);">
+                                    <td>creditcard</td>
+                                    <td>extra_trees</td>
+                                    <td>smote</td>
+                                    <td>0.8502</td>
+                                    <td>&plusmn; 0.0111</td>
+                                    <td>0.8173</td>
+                                </tr>
+                                <tr>
+                                    <td>creditcard</td>
+                                    <td>xgboost</td>
+                                    <td>class_weight</td>
+                                    <td>0.8468</td>
+                                    <td>&plusmn; 0.0122</td>
+                                    <td>0.8020</td>
+                                </tr>
+                                <tr>
+                                    <td>creditcard</td>
+                                    <td>random_forest</td>
+                                    <td>smote</td>
+                                    <td>0.8396</td>
+                                    <td>&plusmn; 0.0198</td>
+                                    <td>0.8046</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p style="margin-top: 1rem; font-size: 0.95rem;"><strong>Volume vs. Stability:</strong> The standard deviation on the large PaySim dataset is minimal (&plusmn;0.0030), confirming model reliability. The smaller Credit Card dataset exhibits higher variance (&plusmn;0.0122), as expected.</p>
+                </div>
+                <div class="slide-col">
+                    <div class="highlight-box">
+                        <h4>Generalization & Overfitting</h4>
+                        <p>Ensembles (XGBoost and Random Forests) manage variance effectively. Decision Trees overfitting is controlled by tree ensembles bagging, ensuring stable CV bounds.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Threshold Tuning -->
+        <div class="slide" id="slide-7">
+            <div class="slide-title"><i class="fa-solid fa-sliders"></i> Decision Threshold Tuning</div>
+            <div class="slide-body">
+                <div class="slide-col">
+                    <p>Instead of assuming that 0.5 is optimal, our pipeline scans thresholds from <strong>0.01 to 0.99</strong> on validation data to minimize the expected cost.</p>
+                    <div class="highlight-box">
+                        <h4>XGBoost class_weight on Credit Card</h4>
+                        <p>Tuning validation threshold to <strong>0.06</strong> caught 4 more fraud cases compared to 0.5, while keeping False Positives at 24. Expected cost dropped from <strong>11,080</strong> to <strong>9,240</strong>.</p>
+                    </div>
+                    <div class="highlight-box">
+                        <h4>XGBoost SMOTE on PaySim</h4>
+                        <p>SMOTE artificial minority sample generation shifts output probabilities upward. Calibration requires tuning validation threshold to a high <strong>0.87</strong>, dropping test expected cost to <strong>27,620</strong>.</p>
+                    </div>
+                </div>
+                <div class="slide-col">
+                    <div class="plot-container">
+                        <img src="../outputs/plots/creditcard__xgboost__class_weight__cm_tuned.png" alt="XGBoost Confusion Matrix" id="cm-img">
+                        <div class="plot-caption">Tuned XGBoost Confusion Matrix (Threshold = 0.06)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: Business Value / Expected Cost -->
+        <div class="slide" id="slide-8">
+            <div class="slide-title"><i class="fa-solid fa-wallet"></i> Cost Analysis & Business Impact</div>
+            <div class="savings-dashboard">
+                <div class="widget cost-default">
+                    <div class="widget-label">Expected Cost (Thresh = 0.5)</div>
+                    <div class="widget-val" id="val-cost-default">$49,740</div>
+                </div>
+                <div class="widget cost-tuned">
+                    <div class="widget-label">Expected Cost (Tuned Thresh)</div>
+                    <div class="widget-val" id="val-cost-tuned">$27,620</div>
+                </div>
+                <div class="widget cost-savings">
+                    <div class="widget-label">Net Savings</div>
+                    <div class="widget-val savings-pct" id="val-savings">$22,120 (44.5%)</div>
+                </div>
+            </div>
+            <div class="slide-body">
+                <div class="slide-col">
+                    <p>Our expected cost metric mirrors real financial risk by setting:</p>
+                    <div class="highlight-box" style="font-family: monospace; font-size: 0.95rem; margin-bottom: 1rem;">
+                        Expected Cost = FP * 10 + FN * 500
+                    </div>
+                    <p><strong>PaySim savings:</strong> By moving threshold to 0.87, XGBoost SMOTE accepts 188 more False Positives (+$1,880 processing costs) but prevents 48 False Negatives (-$24,000 fraud losses). Net benefit: **$22,120 (44.5% savings)**.</p>
+                </div>
+                <div class="slide-col">
+                    <div class="chart-container">
+                        <canvas id="costSavingsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Limitations & Future Enhancements -->
+        <div class="slide" id="slide-9">
+            <div class="slide-title"><i class="fa-solid fa-wrench"></i> Limitations & Future Work</div>
+            <div class="slide-body">
+                <div class="slide-col">
+                    <div class="highlight-box">
+                        <h4>Study Limitations</h4>
+                        <ul>
+                            <li><li><i class="fa-solid fa-triangle-exclamation"></i> <strong>Concept Drift:</strong> Real-world fraud patterns shift dynamically; static evaluations degrade over time.</li>
+                            <li><li><i class="fa-solid fa-triangle-exclamation"></i> <strong>Scale Overhead:</strong> K-NN interpolation for SMOTE/ADASYN is computationally heavy on large sets.</li>
+                        </ul>
+                    </div>
+                    <div class="highlight-box">
+                        <h4>Future Enhancements</h4>
+                        <ul>
+                            <li><li><i class="fa-solid fa-lightbulb"></i> <strong>LightGBM & CatBoost:</strong> Substantially faster training (5x-10x) and native categorical feature handling.</li>
+                            <li><li><i class="fa-solid fa-lightbulb"></i> <strong>Graph Features:</strong> Graph embeddings (Node2Vec) mapping user/merchant relationships.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="slide-col">
+                    <div class="highlight-box" style="background: rgba(251, 191, 36, 0.05); border-left-color: var(--warning);">
+                        <h4>Operational Considerations</h4>
+                        <p><strong>Latency Budget:</strong> Real-time financial transaction screening requires predictions in <strong>under 50-100ms</strong>. High-estimator ensembles must be compiled (e.g., via ONNX or Treelite) to run inline without transaction timeouts.</p>
+                    </div>
+                    <div class="highlight-box" style="background: rgba(52, 211, 153, 0.05); border-left-color: var(--success);">
+                        <h4>GDPR Compliance</h4>
+                        <p>Implementing <strong>SHAP explainability</strong> lets operational teams explain to end-users or regulators why a transaction was declined, satisfying European legal requirements.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Controls Footer -->
+    <footer>
+        <div class="slide-progress-container">
+            <div class="slide-progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="navigation-controls">
+            <button class="btn-control" id="btn-prev" onclick="prevSlide()" disabled><i class="fa-solid fa-arrow-left"></i></button>
+            <span class="slide-number" id="slide-num">1 / 9</span>
+            <button class="btn-control" id="btn-next" onclick="nextSlide()"><i class="fa-solid fa-arrow-right"></i></button>
+            <button class="btn-fullscreen" onclick="toggleFullScreen()"><i class="fa-solid fa-expand"></i></button>
+        </div>
+    </footer>
+
+    <!-- Interactive JS Logic -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 9;
+        let selectedDataset = 'creditcard';
+        let balancingChart, costSavingsChart;
+
+        function updateProgress() {
+            const pct = ((currentSlide - 1) / (totalSlides - 1)) * 100;
+            document.getElementById('progress-bar').style.width = pct + '%';
+            document.getElementById('slide-num').innerText = `${currentSlide} / ${totalSlides}`;
+            
+            document.getElementById('btn-prev').disabled = (currentSlide === 1);
+            document.getElementById('btn-next').disabled = (currentSlide === totalSlides);
+        }
+
+        function showSlide(num) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${num}`).classList.add('active');
+            currentSlide = num;
+            updateProgress();
+            
+            // Re-render charts when their slide becomes active to ensure nice loading animations
+            if (num === 4) {
+                renderBalancingChart();
+            } else if (num === 8) {
+                renderCostSavingsChart();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        // Full Screen Toggle
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            }
+        });
+
+        // Dataset switching
+        function switchResultsTab(datasetName) {
+            selectedDataset = datasetName;
+            
+            // Toggle active tabs
+            const tabButtons = document.querySelectorAll('.tab-container .tab-btn');
+            tabButtons.forEach(btn => {
+                if (btn.innerText.toLowerCase().includes(datasetName)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Toggle table visibility
+            if (datasetName === 'creditcard') {
+                document.getElementById('table-creditcard').style.display = 'table';
+                document.getElementById('table-paysim').style.display = 'none';
+                
+                // Update images to credit card in other slides
+                document.getElementById('pr-curve-img').src = '../outputs/plots/creditcard__xgboost__class_weight_pr.png';
+                document.getElementById('pr-curve-img').alt = 'Credit Card XGBoost PR Curve';
+                document.getElementById('cm-img').src = '../outputs/plots/creditcard__xgboost__class_weight__cm_tuned.png';
+                document.getElementById('cm-img').alt = 'Credit Card Tuned XGBoost Confusion Matrix';
+                document.querySelector('#slide-5 .plot-caption').innerText = 'Credit Card XGBoost Class Weight Precision-Recall Curve';
+                document.querySelector('#slide-7 .plot-caption').innerText = 'Tuned XGBoost Confusion Matrix (Threshold = 0.06)';
+                
+                // Update savings widgets
+                document.getElementById('val-cost-default').innerText = '$11,080';
+                document.getElementById('val-cost-tuned').innerText = '$9,240';
+                document.getElementById('val-savings').innerText = '$1,840 (16.6%)';
+            } else {
+                document.getElementById('table-creditcard').style.display = 'none';
+                document.getElementById('table-paysim').style.display = 'table';
+                
+                // Update images to paysim in other slides
+                document.getElementById('pr-curve-img').src = '../outputs/plots/paysim__xgboost__smote_pr.png';
+                document.getElementById('pr-curve-img').alt = 'PaySim XGBoost SMOTE PR Curve';
+                document.getElementById('cm-img').src = '../outputs/plots/paysim__xgboost__smote__cm_tuned.png';
+                document.getElementById('cm-img').alt = 'PaySim Tuned XGBoost Confusion Matrix';
+                document.querySelector('#slide-5 .plot-caption').innerText = 'PaySim XGBoost SMOTE Precision-Recall Curve';
+                document.querySelector('#slide-7 .plot-caption').innerText = 'Tuned XGBoost Confusion Matrix (Threshold = 0.87)';
+                
+                // Update savings widgets
+                document.getElementById('val-cost-default').innerText = '$49,740';
+                document.getElementById('val-cost-tuned').innerText = '$27,620';
+                document.getElementById('val-savings').innerText = '$22,120 (44.5%)';
+            }
+        }
+
+        // Charts Rendering
+        function renderBalancingChart() {
+            if (balancingChart) balancingChart.destroy();
+            
+            const ctx = document.getElementById('balancingChart').getContext('2d');
+            
+            const data = {
+                labels: ['Baseline', 'Class Weight', 'RUS', 'ROS', 'SMOTE', 'ADASYN'],
+                datasets: [{
+                    label: 'Fraud Recall (XGBoost on CreditCard)',
+                    data: [0.8182, 0.8182, 0.8182, 0.8182, 0.7980, 0.8384],
+                    backgroundColor: 'rgba(56, 189, 248, 0.5)',
+                    borderColor: 'rgb(56, 189, 248)',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }, {
+                    label: 'Precision (XGBoost on CreditCard)',
+                    data: [0.6378, 0.7714, 0.2978, 0.4602, 0.5643, 0.3192],
+                    backgroundColor: 'rgba(52, 211, 153, 0.5)',
+                    borderColor: 'rgb(52, 211, 153)',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            };
+
+            balancingChart = new Chart(ctx, {
+                type: 'bar',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f8fafc', font: { family: 'Outfit' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderCostSavingsChart() {
+            if (costSavingsChart) costSavingsChart.destroy();
+            
+            const ctx = document.getElementById('costSavingsChart').getContext('2d');
+            
+            const labels = ['XGBoost SMOTE (PaySim)', 'XGBoost Oversample (PaySim)', 'XGBoost Baseline (PaySim)', 'XGBoost ClassWeight (CC)'];
+            const costDefault = [49740, 36990, 139610, 11080];
+            const costTuned = [27620, 28300, 30780, 9240];
+
+            costSavingsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cost at 0.5 Threshold',
+                        data: costDefault,
+                        backgroundColor: 'rgba(248, 113, 113, 0.5)',
+                        borderColor: 'rgb(248, 113, 113)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }, {
+                        label: 'Cost at Tuned Threshold',
+                        data: costTuned,
+                        backgroundColor: 'rgba(52, 211, 153, 0.5)',
+                        borderColor: 'rgb(52, 211, 153)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { color: '#f8fafc', font: { family: 'Outfit' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize progress bar
+        updateProgress();
+    </script>
+</body>
+</html>

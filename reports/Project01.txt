@@ -1,0 +1,490 @@
+LABORATORY PROJECT No. 1
+Financial Fraud Detection – Classification of Highly
+Imbalanced Data
+Project Objective
+The objective of the project is to design, implement, and compare machine
+learning models for detecting fraudulent transactions under conditions of
+extreme class imbalance (e.g., 0.1–1% fraud cases).
+Students are expected to:
+
+
+understand the problem of class imbalance,
+
+
+
+analyze the impact of different data balancing strategies,
+
+
+
+compare classical and ensemble models,
+
+
+
+evaluate models using appropriate metrics (not only accuracy),
+
+
+
+conduct a cost analysis of incorrect decisions.
+
+At least one dataset must be selected from Kaggle or the UCI Repository.
+Example datasets:
+
+
+Credit Card Fraud Detection Dataset (Kaggle) – 284,807 transactions,
+~492 fraud cases,
+
+
+
+IEEE-CIS Fraud Detection (more complex, requiring feature
+engineering).
+
+In real financial systems, the fraud class often constitutes less than 1% of the
+data. A model may achieve 99% accuracy by classifying all observations as the
+normal class.
+At the same time, the cost of a False Negative error (undetected fraud) is usually
+significantly higher than the cost of a False Positive.
+Therefore, the project should focus on:
+
+
+analysis of evaluation metrics under class imbalance conditions,
+
+
+
+strategies for handling class imbalance,
+
+
+
+cost-sensitive classification analysis.
+
+1
+
+Baseline models: Logistic Regression (baseline), Decision Tree, Random Forest,
+XGBoost, LightGBM
+Class imbalance approaches: No modification (baseline), Class weighting,
+Random undersampling, Random oversampling, SMOTE, ADASYN, Threshold
+moving.
+Evaluation metrics – It must be demonstrated that: Accuracy ≠ an appropriate
+metric in fraud detection.
+Required metrics: ROC-AUC, PR-AUC (key metric), Recall (fraud), Precision,
+F1-score, Confusion matrix, Expected cost (cost matrix)
+
+Analyses required in the project:
+
+
+The impact of balancing strategies on fraud Recall.
+
+
+
+Decision threshold analysis (threshold tuning).
+
+
+
+Model stability (k-fold cross validation). Comparison of models in terms
+of effectiveness, training time, stability, and overfitting analysis.
+
+2
+
+Report 1 – Theoretical aspects and data description
+
+
+Introduction to the fraud detection problem.
+
+
+
+Data description.
+
+
+
+Description of models and balancing methods selected for the solution.
+
+Assessment Criteria
+Criterion
+
+3.0 (15–17
+pts)
+
+3.5 (18–19 pts)
+
+4.0 (20–21
+pts)
+
+Description of the
+problem and class
+imbalance
+
+General
+description
+
+Correct
+indication of %
+fraud
+
+Class
+distribution
+analysis
+
+Cost-sensitive
+In-depth analysis
+interpretation of
++ visualizations
+the problem
+
+EDA and data description
+
+Basic
+information
+
+Feature
+distributions
+
+Correlation
+analysis
+
+Outlier and
+missing data
+analysis
+
+Identification of
+risks (data
+leakage)
+
+Justification of model
+selection
+
+No
+justification
+
+Brief
+justification
+
+Proper
+justification
+
+Comparison of
+methods
+
+Formulated
+research
+hypotheses
+
+4.5 (22–23 pts)
+
+5.0 (24–25 pts)
+
+3
+
+Report 2 – Method implementation and evaluation metrics
+Implementation code (ZIP file)
+Description of the most important implemented functions
+Description of evaluation metrics
+MANDATORY REQUIREMENT (for report approval)
+The student must:
+
+
+implement at least 3 classification models,
+
+
+
+apply at least 1 class imbalance handling method,
+
+
+
+compute the following metrics: ROC-AUC, PR-AUC, Recall (fraud).
+
+Failure to include any of the above → report not approved.
+
+Grade
+
+Min.
+number of
+models
+
+Technical
+requirements
+
+1 balancing method,
+Train/test split
+basic metrics
+
+3.0 (21–23 pts)
+
+3
+
+3.5 (24–26 pts)
+
+2 balancing
+3 methods, ROC and
+PR curves
+
+4.0 (27–29 pts)
+
+3–4 (min. 1
+boosting)
+
+4.5 (30–32 pts)
+
+5.0 (33–35 pts)
+
+≥2 balancing
+methods
+
+4
+
+4+ (min. 2
+ensemble)
+
+Methodological
+elements
+
+≥3 balancing
+methods
+
+Comparison table
+
+Description
+Correct model
+implementation.
+Superficial analysis, no
+in-depth
+methodological
+reflection.
+Ordered comparison.
+Visible attempt to
+analyze differences.
+
+k-fold cross
+Student understands
+validation, variance class imbalance and
+analysis
+model stability.
+
+Cross-validation +
+threshold tuning
+
+Experiment
+≥3 balancing
+automation,
+methods + costhyperparameter
+sensitive evaluation
+analysis
+
+Methodological
+correctness (no data
+leakage). Precision–
+recall trade-off
+analysis. Stable results.
+Very high experimental
+level. Reproducibility
+and critical analysis.
+
+Models must include at least: 1 linear model, 1 tree-based model, 1 ensemble
+model. Balancing methods must be applied exclusively to the training set.
+4
+
+Report 3
+RESULTS ANALYSIS AND EXPERIMENTAL CONCLUSIONS
+(40 pts)
+The report must include:
+
+
+a consolidated results table for all models,
+
+
+
+analysis of the impact of balancing methods,
+
+
+
+interpretation of results for the fraud class,
+
+
+
+final conclusions.
+
+Analyses required in the project:
+
+
+Impact of balancing strategies on fraud Recall.
+
+
+
+Decision threshold analysis (threshold tuning).
+
+
+
+Model stability (k-fold cross validation). Comparison of models in terms
+of effectiveness, training time, stability, and overfitting analysis.
+
+Mandatory requirement (for report approval)
+Lack of analysis (presentation of tables only) → report not approved.
+Grade
+
+Scope of
+analysis
+
+3.0
+(24–26
+pts)
+
+Simple model
+comparison
+
+Required elements
+
+Level of
+interpretation
+
+Description
+
+Results table,
+confusion matrix
+
+“Model A better
+than B” type
+description
+
+Reproductive
+analysis without
+deeper
+interpretation.
+
+3.5
+(27–29
+pts)
+
+Comparison of
+several metrics
+
+ROC or PR-AUC
+analysis
+
+Indication of
+differences
+
+Attempt at
+interpretation
+without causal
+analysis.
+
+4.0
+(30–33
+pts)
+
+Balancing
+impact analysis
+
+Fraud recall, CV
+results
+
+Precision–recall
+trade-off
+interpretation
+
+Understanding of
+imbalance impact.
+
+4.5
+(34–37
+pts)
+
+Threshold
+tuning +
+stability
+
+Variance analysis,
+overfitting
+
+Discussion of
+trade-offs and
+risks
+
+Mature
+experimental
+analysis.
+
+Expected cost,
+trade-off analysis
+
+Interpretation in
+real financial
+systems context
+
+Research-level
+work. Critical
+evaluation and
+improvement
+proposals.
+
+In-depth cost
+5.0 (38–
+and practical
+40 pts)
+analysis
+
+5
+
+Clarification of requirements for higher grades
+From 4.0 and above, the report should include:
+
+
+analysis of balancing methods’ impact on fraud Recall,
+
+
+
+stability analysis (mean + standard deviation from CV).
+
+From 4.5 and above:
+
+
+decision threshold analysis,
+
+
+
+overfitting analysis (train vs validation).
+
+For 5.0:
+
+
+cost analysis (Expected cost with cost matrix),
+
+
+
+identification of study limitations (e.g., small number of fraud cases),
+
+
+
+proposals for further system development.
+
+Detailed scoring (40 pts)
+1. Consolidated results table (all models + all metrics) – 6
+2. Analysis of balancing methods’ impact on Recall (fraud) – 8
+3. ROC-AUC and PR-AUC analysis (including plots) – 6
+4. Stability analysis (k-fold: mean + standard deviation) – 6
+5. Decision threshold analysis (threshold tuning) – 5
+6. Cost analysis (Expected cost, cost matrix) – 5
+7. Quality and maturity of experimental conclusions – 4
+Total – 40 pts
+
+Final Laboratory Grade
+The final laboratory grade is the sum of points from the three reports according
+to the following scale:
+Total points Final
+(R1+R2+R3) grade
+0-59
+60-67
+68-74
+75-82
+83-90
+91-100
+
+laboratory
+
+2
+3
+3,5
+4
+4,5
+5
+6
+
+
