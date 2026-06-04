@@ -6,24 +6,7 @@
 * Mykola Tatarenkov (53631)
 * Siarhei Kryshchanovich (57763)
 
-**Course:** Machine Learning for Financial Applications  
-**Date:** June 2026
-
----
-
-## Diagnostic of the Initial Draft
-
-The initial Report 3 draft already had a strong foundation. It correctly identified the project as an imbalanced fraud-detection problem, used the generated comparison table as the main empirical source, emphasized PR-AUC and expected cost instead of accuracy, and included the most important operational idea: threshold tuning with an asymmetric cost matrix.
-
-However, the draft was not yet at a 5.0 submission level for four reasons. First, several statements were too general and needed stronger connection to the actual CSV artifacts. Second, the stability section stated 5-fold cross-validation, while the repository configuration uses 3-fold cross-validation for the main experiment and constrained 2-fold tuning for PaySim hyperparameter search. Third, training-time, overfitting, limitations, and reproducibility were discussed too briefly for the assessment criteria. Fourth, the cost-sensitive analysis needed a clearer explanation of how threshold tuning changes the business decision, not only the metric values.
-
-This final version preserves the useful structure and conclusions of the draft, but strengthens the analysis, corrects methodological details, and grounds the interpretation in the repository outputs.
-
----
-
 ## 1. Executive Summary
-
-This report completes the experimental analysis of the fraud-detection pipeline developed in Reports 1 and 2. The project evaluates binary fraud classification under extreme class imbalance on two datasets:
 
 * **Credit Card Fraud Detection**: 284,807 transactions with 492 fraud cases, approximately 0.172% fraud.
 * **PaySim**: 6,362,620 simulated mobile-money transactions with 8,213 fraud cases, approximately 0.129% fraud.
