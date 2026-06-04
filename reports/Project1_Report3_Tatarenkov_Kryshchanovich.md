@@ -8,6 +8,8 @@
 
 ## 1. Executive Summary
 
+The project evaluates binary fraud classification under extreme class imbalance on two datasets:
+
 * **Credit Card Fraud Detection**: 284,807 transactions with 492 fraud cases, approximately 0.172% fraud.
 * **PaySim**: 6,362,620 simulated mobile-money transactions with 8,213 fraud cases, approximately 0.129% fraud.
 
@@ -33,6 +35,8 @@ The following tables are generated from `outputs/comparison_table.csv`. They rep
 $$
 \text{Expected Cost} = 10 \cdot FP + 500 \cdot FN
 $$
+
+**Important reading note:** FP and FN correspond to the tuned-threshold result, i.e. predictions made at `best_threshold_from_val`. The `Cost 0.5` column is computed independently at the default threshold of 0.5 and therefore does not correspond to the displayed FP/FN values.
 
 ### 2.1 Credit Card Results
 
@@ -243,7 +247,7 @@ The thresholds vary widely because raw model probabilities are not calibrated in
 
 This is one of the most important practical findings. A threshold is not a technical detail after training; it is part of the fraud-detection policy. Lowering the threshold usually increases recall and false positives. Raising the threshold usually improves precision but increases false negatives. The correct choice depends on the cost ratio and operational tolerance for manual review.
 
-In this project, false negatives cost 500 and false positives cost 10. Therefore, accepting additional false positives is rational if it prevents enough missed fraud. The best PaySim example makes this explicit: XGBoost SMOTE increases false positives from 1,474 at threshold 0.5 to 1,662 at threshold 0.87, but reduces false negatives from 70 to 22. The additional 188 false positives cost 1,880, while the 48 avoided false negatives save 24,000. The net reduction is 22,120.
+In this project, false negatives cost 500 and false positives cost 10. Therefore, accepting additional false positives is rational if it prevents enough missed fraud. The best PaySim example makes this explicit at the cost level: XGBoost SMOTE has a stored default-threshold cost of 49,740, while the tuned threshold of 0.87 produces 1,662 false positives, 22 false negatives, and a tuned cost of 27,620. The tuned operating point therefore reduces expected cost by 22,120. The displayed FP and FN counts refer to the tuned threshold only; the default-threshold cost is computed separately.
 
 ---
 
@@ -267,9 +271,9 @@ This cost structure reflects practical fraud detection. A false positive may req
 | creditcard | XGBoost + class_weight | 11,080 | 9,240 | 1,840 | 16.6% |
 | paysim | XGBoost + SMOTE | 49,740 | 27,620 | 22,120 | 44.5% |
 
-For Credit Card, the tuned threshold reduces false negatives from 22 to 18 while keeping false positives at 24. This is an unusually clean improvement: the model catches four additional fraud cases without increasing the false-positive count on the test set. The resulting expected cost decreases from 11,080 to 9,240.
+For Credit Card, the tuned XGBoost class_weight result has 24 false positives and 18 false negatives. These tuned-threshold counts give the displayed cost exactly: `24 * 10 + 18 * 500 = 9,240`. The independently stored default-threshold cost is 11,080, so threshold tuning reduces expected cost by 1,840.
 
-For PaySim, the improvement is more dramatic. XGBoost SMOTE at threshold 0.5 produces 70 false negatives and 1,474 false positives. At the tuned threshold 0.87, it produces only 22 false negatives and 1,662 false positives. The false-positive count rises, but the false-negative reduction is much more valuable under the cost matrix.
+For PaySim, the improvement фt the tuned threshold 0.87, XGBoost SMOTE produces 1,662 false positives and only 22 false negatives, giving `1,662 * 10 + 22 * 500 = 27,620`. The independently stored default-threshold cost is 49,740, so tuning reduces expected cost by 22,120. The consolidated table intentionally displays only tuned-threshold FP/FN; `Cost at 0.5` is a separate threshold-0.5 evaluation.
 
 Cost-sensitive evaluation also changes model preference. A model with slightly higher PR-AUC is not always the best operational choice if its thresholded confusion matrix creates more expensive errors. For example, PaySim XGBoost oversampling has slightly higher PR-AUC than XGBoost SMOTE, but its tuned expected cost is 28,300 instead of 27,620. The final decision should therefore consider PR-AUC, recall, precision, and expected cost together.
 
